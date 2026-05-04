@@ -1,0 +1,145 @@
+================================================================================
+GOVERNMENT OF ANDHRA PRADESH
+e-PROCUREMENT PORTAL
+CVC COMPLIANCE CHECKLIST FOR TENDER MANAGEMENT
+Central Vigilance Commission Guidelines | GFR 2017
+================================================================================
+
+NIT No.      : ___________________________
+Name of Work : ___________________________
+Department   : ___________________________
+TIA Name     : ___________________________
+Date         : ___________________________
+
+================================================================================
+SECTION 1 — PRE-TENDER STAGE
+================================================================================
+
+1.1  NEED ASSESSMENT
+     [ ] Administrative approval obtained from competent authority
+     [ ] Technical sanction accorded where required
+     [ ] Funds availability confirmed / budget provision exists
+     [ ] Scope of work clearly defined and documented
+
+1.2  ESTIMATE PREPARATION
+     [ ] Estimate prepared by qualified engineer / officer
+     [ ] Schedule of Rates (SOR) used wherever applicable
+     [ ] Market survey conducted for non-SOR items
+     [ ] Contingency provision within permissible limits (≤ 5%)
+     [ ] Estimate vetted / approved by competent authority
+
+1.3  TENDER DOCUMENT PREPARATION
+     [ ] NIT prepared in prescribed Format (Form-I per GFR 2017)
+     [ ] Eligibility criteria are reasonable and non-restrictive
+     [ ] Qualification criteria linked to nature and complexity of work
+     [ ] No brand names specified without justification (CVC directive)
+     [ ] Technical specifications are generic, non-proprietary
+     [ ] EMD fixed at 2–3% of estimated cost (CVC guideline)
+     [ ] Performance security fixed at 5–10% of contract value
+     [ ] Defect Liability Period specified
+     [ ] Bid validity period specified (minimum 90 days)
+     [ ] Dispute resolution clause included (Arbitration Act 1996)
+
+1.4  TRANSPARENCY & PUBLICITY
+     [ ] NIT published on e-Procurement portal (mandatory)
+     [ ] NIT published in at least two newspapers (one regional)
+     [ ] Sufficient time given for bid submission (≥ 21 days for works > ₹5 Cr)
+     [ ] Corrigendum (if any) published with adequate notice period
+
+================================================================================
+SECTION 2 — TENDER EVALUATION STAGE
+================================================================================
+
+2.1  BID OPENING
+     [ ] Bids opened in presence of bidders / their representatives
+     [ ] All bids received before due date/time considered
+     [ ] Late bids returned unopened
+     [ ] Bid opening minutes prepared and signed
+
+2.2  TECHNICAL EVALUATION
+     [ ] Technical committee constituted with ≥ 3 members
+     [ ] Evaluation done strictly as per NIT criteria — no post-facto changes
+     [ ] Disqualification reasons recorded in writing
+     [ ] Clarifications sought only in writing; no changes in prices sought
+     [ ] Minutes of technical evaluation signed by all members
+
+2.3  FINANCIAL EVALUATION
+     [ ] Only technically qualified bidders' financial bids opened
+     [ ] L1 (Lowest Bidder) identified correctly
+     [ ] Arithmetical errors corrected as per standard procedure
+     [ ] Comparative statement (CBS) prepared and signed
+     [ ] Negotiations only with L1 if price > estimate (CVC directive — no cartel negotiation)
+     [ ] Post-tender negotiations not conducted (prohibited by CVC)
+
+2.4  AWARD DECISION
+     [ ] Award recommended to L1 bidder with justification
+     [ ] If L1 is not recommended, detailed reasons recorded
+     [ ] Approval obtained from competent authority
+     [ ] Splitting of work to avoid higher approval — NOT done (CVC prohibition)
+
+================================================================================
+SECTION 3 — POST-AWARD STAGE
+================================================================================
+
+3.1  AGREEMENT EXECUTION
+     [ ] Agreement executed within 15 days of LoA issue
+     [ ] Performance security received before agreement signing
+     [ ] Agreement on proper stamp paper (₹100 minimum)
+
+3.2  CONTRACT MANAGEMENT
+     [ ] Work order / supply order issued promptly
+     [ ] Extension of time (EoT) granted only with genuine reasons
+     [ ] EoT not used to circumvent penalty clauses
+     [ ] Sub-contracting only with prior written approval if allowed
+
+3.3  PAYMENT CERTIFICATION
+     [ ] Measurements recorded in prescribed MBs (Measurement Books)
+     [ ] Running account (RA) bills verified by Junior/Assistant Engineer
+     [ ] Final bill settled within 3 months of project completion
+     [ ] No advance payments without Bank Guarantee / authority approval
+     [ ] All deductions (IT, GST, security deposit) made correctly
+
+================================================================================
+SECTION 4 — INTEGRITY & ANTI-CORRUPTION
+================================================================================
+
+4.1  CONFLICT OF INTEREST
+     [ ] Evaluating officers have no financial interest in any bidder
+     [ ] Family members of evaluating officers not associated with bidders
+     [ ] Self-declaration of no conflict obtained from each committee member
+
+4.2  GIFTS & HOSPITALITY
+     [ ] No gifts / hospitality accepted from bidders at any stage
+     [ ] All communications with bidders documented and on record
+
+4.3  BLACKLISTING
+     [ ] Blacklisted / debarred vendors excluded from eligible list
+     [ ] Central blacklist (CVC/MCA) checked before shortlisting
+
+4.4  RTI COMPLIANCE
+     [ ] All tender documents available for public inspection
+     [ ] RTI queries responded within 30 days as per RTI Act 2005
+
+================================================================================
+CERTIFICATION
+================================================================================
+
+I / We certify that the above checklist has been reviewed and all applicable
+items have been complied with in respect of the above NIT.
+
+Tender Inviting Authority:
+Name          : ___________________________
+Designation   : ___________________________
+Date          : ___________________________
+Signature     : ___________________________
+
+Vigilance Officer (if applicable):
+Name          : ___________________________
+Date          : ___________________________
+Signature     : ___________________________
+
+================================================================================
+Reference: CVC Circular No. 2005/INT/18 | GFR 2017 | AP e-Procurement Policy
+Government of Andhra Pradesh · e-Procurement Portal
+helpdesk@apeprocurement.gov.in | 1800-3070-2232 (Toll Free)
+================================================================================

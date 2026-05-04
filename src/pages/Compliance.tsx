@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShieldCheck, AlertTriangle, CheckCircle2, FileText, Search, Download, Eye, Scale, Lock, BookOpen, AlertOctagon } from "lucide-react";
+import { useT } from "@/lib/useT";
 
 type Severity = "low" | "medium" | "high";
 
@@ -38,6 +39,7 @@ const SEV_TONE: Record<Severity, string> = {
 
 export default function Compliance() {
   const { tenders, vendors } = useAdmin();
+  const T = useT();
   const [selected, setSelected] = useState<Finding | null>(null);
   const [search, setSearch] = useState("");
 
@@ -95,8 +97,8 @@ export default function Compliance() {
 
   return (
     <AdminLayout
-      title="Compliance & CVC Vigilance"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Compliance" }, { label: "CVC Vigilance" }]}
+      title={T("compliance_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_compliance") }]}
       actions={
         <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-xs text-accent-foreground hover:bg-accent/90">
           <Download className="h-3.5 w-3.5" /> Compliance Report

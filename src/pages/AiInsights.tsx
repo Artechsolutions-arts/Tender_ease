@@ -16,6 +16,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
   LineChart, Line,
 } from "recharts";
+import { useT } from "@/lib/useT";
 
 type Risk = "Low" | "Medium" | "High";
 
@@ -37,6 +38,7 @@ const RISK_TONE: Record<Risk, string> = {
 
 export default function AiInsights() {
   const { tenders, vendors } = useAdmin();
+  const T = useT();
   const [refreshedAt] = useState(new Date());
 
   const insights = useMemo(() => {
@@ -141,8 +143,8 @@ export default function AiInsights() {
 
   return (
     <AdminLayout
-      title="AI Insights & Predictive Analytics"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "AI Insights" }]}
+      title={T("ai_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_ai_insights") }]}
       actions={
         <>
           <Badge variant="outline" className="border-info/40 bg-info/10 text-info">

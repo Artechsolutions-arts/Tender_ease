@@ -1,25 +1,37 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, FileText, Users, Sparkles, LayoutDashboard, FileCheck2, Gavel, BarChart3, ShieldCheck, HelpCircle, LogOut, ChevronRight, Mail, Phone, MapPin, BriefcaseBusiness } from "lucide-react";
+import { Bell, FileText, Users, Sparkles, LayoutDashboard, FileCheck2, Gavel, BarChart3, ShieldCheck, HelpCircle, LogOut, ChevronRight, BriefcaseBusiness, ScanSearch, Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAdmin } from "@/store/admin-store";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fmtDateTime } from "@/store/admin-store";
 import { useAuth, type UserRole } from "@/store/auth-store";
+import { useLang } from "@/store/lang-store";
+import { t, type TranslationKey } from "@/lib/translations";
 
-const NAV = [
-  { label: "Overview", icon: LayoutDashboard, to: "/", roles: ["admin"] },
-  { label: "Tenders", icon: FileText, to: "/tenders", roles: ["admin"] },
-  { label: "Vendors", icon: Users, to: "/vendors", roles: ["admin"] },
-  { label: "Vendor Dashboard", icon: BriefcaseBusiness, to: "/vendor-dashboard", roles: ["vendor"] },
-  { label: "Bid Evaluation", icon: FileCheck2, to: "/bid-evaluation", roles: ["admin"] },
-  { label: "Awards / LoA", icon: Gavel, to: "/awards", roles: ["admin"] },
-  { label: "AI Insights", icon: Sparkles, to: "/ai-insights", roles: ["admin"] },
-  { label: "MIS Reports", icon: BarChart3, to: "/reports", roles: ["admin"] },
-  { label: "Notifications", icon: Bell, to: "/notifications", roles: ["admin", "vendor"] },
-  { label: "Compliance / CVC", icon: ShieldCheck, to: "/compliance", roles: ["admin"] },
-  { label: "Help Desk", icon: HelpCircle, to: "/help", roles: ["admin"] },
+type FontScale = "small" | "normal" | "large";
+
+const FONT_SIZES: Record<FontScale, string> = { small: "13px", normal: "16px", large: "19px" };
+
+const NAV: { labelKey: TranslationKey; icon: React.ElementType; to: string; roles: string[] }[] = [
+  { labelKey: "nav_overview", icon: LayoutDashboard, to: "/", roles: ["admin"] },
+  { labelKey: "nav_tenders", icon: FileText, to: "/tenders", roles: ["admin"] },
+  { labelKey: "nav_vendors", icon: Users, to: "/vendors", roles: ["admin"] },
+  { labelKey: "nav_vendor_dashboard", icon: BriefcaseBusiness, to: "/vendor-dashboard", roles: ["vendor"] },
+  { labelKey: "nav_bid_evaluation", icon: FileCheck2, to: "/bid-evaluation", roles: ["admin"] },
+  { labelKey: "nav_awards", icon: Gavel, to: "/awards", roles: ["admin"] },
+  { labelKey: "nav_ai_insights", icon: Sparkles, to: "/ai-insights", roles: ["admin"] },
+  { labelKey: "nav_reports", icon: BarChart3, to: "/reports", roles: ["admin"] },
+  { labelKey: "nav_documents", icon: ScanSearch, to: "/documents", roles: ["admin", "vendor"] },
+  { labelKey: "nav_notifications", icon: Bell, to: "/notifications", roles: ["admin", "vendor"] },
+  { labelKey: "nav_compliance", icon: ShieldCheck, to: "/compliance", roles: ["admin"] },
+  { labelKey: "nav_help", icon: HelpCircle, to: "/help", roles: ["admin"] },
 ];
 
 interface Crumb { label: string; to?: string }
@@ -36,6 +48,24 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
   const navigate = useNavigate();
   const { notifications, markAllRead, markRead } = useAdmin();
   const { currentUser, logout } = useAuth();
+  const { lang, setLang } = useLang();
+
+  const [fontScale, setFontScaleState] = useState<FontScale>(
+    () => (localStorage.getItem("ap_font") as FontScale) ?? "normal"
+  );
+
+  useEffect(() => {
+    document.documentElement.style.fontSize = FONT_SIZES[fontScale];
+    localStorage.setItem("ap_font", fontScale);
+  }, [fontScale]);
+
+  const setFontScale = (f: FontScale) => setFontScaleState(f);
+
+  const skipToMain = () => {
+    const main = document.getElementById("main-content");
+    if (main) { main.setAttribute("tabindex", "-1"); main.focus(); main.scrollIntoView({ behavior: "smooth" }); }
+  };
+
   const navItems = NAV.filter((item) => item.roles.includes((currentUser?.role ?? "admin") as UserRole));
   const visibleNotifications = notifications.filter((n) => {
     if (!currentUser) return false;
@@ -44,6 +74,8 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
     return true;
   });
   const unreadCount = visibleNotifications.filter((n) => !n.read).length;
+
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -55,22 +87,97 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
       {/* Top utility bar */}
       <div className="flex items-center justify-between gap-4 bg-[hsl(208_82%_18%)] px-4 py-1 text-[11px] text-white/85 md:px-8">
         <div className="flex items-center gap-3">
-          <span>भारत सरकार | Government of India</span>
-          <span className="text-white/40">|</span>
-          <span className="hidden sm:inline">Government of Andhra Pradesh</span>
+          <span>{t(lang, "govt_ap")}</span>
           <span className="hidden sm:inline text-white/40">|</span>
-          <span className="hidden md:inline">Last login: 23-Apr-2026 09:42 IST</span>
+          <span className="hidden md:inline">{(() => {
+            const raw = localStorage.getItem("lastLoginAt");
+            if (!raw) return null;
+            const locale = lang === "hi" ? "hi-IN" : lang === "te" ? "te-IN" : "en-IN";
+            const fmt = new Intl.DateTimeFormat(locale, {
+              day: "2-digit", month: "short", year: "numeric",
+              hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata",
+            }).format(new Date(raw));
+            return `${t(lang, "last_login")}: ${fmt} IST`;
+          })()}</span>
         </div>
         <div className="flex items-center gap-3">
-          <button className="hidden sm:inline hover:text-accent">Skip to main content</button>
+          <button
+            className="hidden sm:inline hover:text-accent transition-colors"
+            onClick={skipToMain}
+          >
+            {t(lang, "skip_to_main")}
+          </button>
           <span className="hidden sm:inline text-white/40">|</span>
-          <button className="hover:text-accent">Sitemap</button>
+
+          {/* Sitemap dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="hover:text-accent transition-colors">{t(lang, "sitemap")}</button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs">{t(lang, "site_navigation")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {navItems.map((item) => (
+                <DropdownMenuItem key={item.to} asChild>
+                  <Link to={item.to} className="flex items-center gap-2 text-xs">
+                    <item.icon className="h-3 w-3" /> {t(lang, item.labelKey)}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <span className="text-white/40">|</span>
-          <span className="font-mono">A-&nbsp;A&nbsp;A+</span>
+
+          {/* Font size controls */}
+          <span className="flex items-center gap-1 font-mono">
+            <button
+              onClick={() => setFontScale("small")}
+              className={`px-0.5 transition-colors hover:text-accent ${fontScale === "small" ? "text-accent font-bold" : ""}`}
+              aria-label="Decrease font size"
+            >
+              A-
+            </button>
+            <button
+              onClick={() => setFontScale("normal")}
+              className={`px-0.5 transition-colors hover:text-accent ${fontScale === "normal" ? "text-accent font-bold" : ""}`}
+              aria-label="Normal font size"
+            >
+              A
+            </button>
+            <button
+              onClick={() => setFontScale("large")}
+              className={`px-0.5 transition-colors hover:text-accent ${fontScale === "large" ? "text-accent font-bold" : ""}`}
+              aria-label="Increase font size"
+            >
+              A+
+            </button>
+          </span>
+
           <span className="text-white/40">|</span>
-          <button className="hover:text-accent">हिंदी</button>
-          <button className="hover:text-accent">తెలుగు</button>
-          <button className="text-accent">English</button>
+
+          {/* Language switcher */}
+          <button
+            onClick={() => setLang("hi")}
+            className={`transition-colors hover:text-accent ${lang === "hi" ? "text-accent font-semibold" : ""}`}
+            aria-label="Switch to Hindi"
+          >
+            हिंदी
+          </button>
+          <button
+            onClick={() => setLang("te")}
+            className={`transition-colors hover:text-accent ${lang === "te" ? "text-accent font-semibold" : ""}`}
+            aria-label="Switch to Telugu"
+          >
+            తెలుగు
+          </button>
+          <button
+            onClick={() => setLang("en")}
+            className={`transition-colors hover:text-accent ${lang === "en" ? "text-accent font-semibold" : ""}`}
+            aria-label="Switch to English"
+          >
+            English
+          </button>
         </div>
       </div>
 
@@ -78,32 +185,29 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
       <header className="border-b-4 border-accent bg-white">
         <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-8">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary ring-2 ring-primary/30">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_Andhra_Pradesh.svg/120px-Emblem_of_Andhra_Pradesh.svg.png"
-                alt="Government of Andhra Pradesh emblem"
-                className="h-12 w-12 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            </div>
+            <img
+              src="/ap-govt-logo.png"
+              alt="Government of Andhra Pradesh emblem"
+              className="h-16 w-16 object-contain"
+            />
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">सत्यमेव जयते</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{t(lang, "satyameva")}</p>
               <h1 className="text-lg font-bold leading-tight tracking-tight text-primary md:text-2xl">
-                Government of Andhra Pradesh
+                {t(lang, "govt_ap_full")}
               </h1>
-              <p className="text-xs font-semibold text-accent md:text-sm">e-Procurement Portal · AI Tender Management</p>
+              <p className="text-xs font-semibold text-accent md:text-sm">{t(lang, "portal_tagline")}</p>
             </div>
           </div>
           <div className="hidden items-center gap-3 md:flex">
             <div className="rounded border border-border bg-secondary/40 px-3 py-1.5 text-right">
-              <p className="text-[10px] uppercase text-muted-foreground">Logged in as</p>
+              <p className="text-[10px] uppercase text-muted-foreground">{t(lang, "logged_in_as")}</p>
               <p className="text-xs font-semibold text-primary">{currentUser?.name ?? "Guest User"}</p>
               <p className="text-[10px] text-muted-foreground">{currentUser?.organization ?? "AP e-Procurement"}</p>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-secondary" aria-label="Notifications">
+                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-secondary" aria-label={t(lang, "notifications")}>
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
@@ -114,8 +218,8 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel className="flex items-center justify-between">
-                  <span>Notifications</span>
-                  <button className="text-[11px] font-normal text-info hover:underline" onClick={markAllRead}>Mark all read</button>
+                  <span>{t(lang, "notifications")}</span>
+                  <button className="text-[11px] font-normal text-info hover:underline" onClick={markAllRead}>{t(lang, "mark_all_read")}</button>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="max-h-80 overflow-y-auto">
@@ -130,22 +234,40 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
                     </DropdownMenuItem>
                   ))}
                   {visibleNotifications.length === 0 && (
-                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">No notifications</p>
+                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">{t(lang, "no_notifications")}</p>
                   )}
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/notifications" className="text-xs text-info">View all notifications →</Link>
+                  <Link to="/notifications" className="text-xs text-info">{t(lang, "view_all_notifications")}</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" className="text-primary hover:bg-secondary" aria-label="Logout" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="text-primary hover:bg-secondary" aria-label={t(lang, "logout")} onClick={() => setShowLogoutConfirm(true)}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t(lang, "logout_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t(lang, "logout_confirm_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t(lang, "cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleLogout}
+            >
+              {t(lang, "logout")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Primary nav */}
       <nav className="bg-primary text-primary-foreground shadow-md">
@@ -153,7 +275,7 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
           {navItems.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             return (
-              <li key={item.label}>
+              <li key={item.labelKey}>
                 <Link
                   to={item.to}
                   className={`flex items-center gap-1.5 whitespace-nowrap border-r border-primary-foreground/15 px-4 py-3 text-xs font-semibold uppercase tracking-wide transition ${
@@ -161,7 +283,7 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
                   }`}
                 >
                   <item.icon className="h-3.5 w-3.5" />
-                  {item.label}
+                  {t(lang, item.labelKey)}
                 </Link>
               </li>
             );
@@ -185,27 +307,25 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
 
-      <main className="flex-1 px-4 py-5 md:px-8">{children}</main>
+      <main id="main-content" className="flex-1 px-4 py-5 md:px-8">{children}</main>
 
       <footer className="mt-auto border-t-4 border-accent bg-primary text-primary-foreground">
         <div className="grid grid-cols-1 gap-6 px-4 py-6 md:grid-cols-4 md:px-8">
           <div>
-            <h3 className="mb-2 text-sm font-semibold">AP e-Procurement</h3>
-            <p className="text-xs leading-relaxed text-primary-foreground/75">
-              Official portal for tender publishing, bid management and contract awards by the Government of Andhra Pradesh.
-            </p>
+            <h3 className="mb-2 text-sm font-semibold">{t(lang, "footer_portal_title")}</h3>
+            <p className="text-xs leading-relaxed text-primary-foreground/75">{t(lang, "footer_portal_desc")}</p>
           </div>
           <div>
-            <h3 className="mb-2 text-sm font-semibold">Quick Links</h3>
+            <h3 className="mb-2 text-sm font-semibold">{t(lang, "footer_quick_links")}</h3>
             <ul className="space-y-1 text-xs text-primary-foreground/75">
-              <li><Link to="/tenders" className="hover:text-accent">Tenders</Link></li>
-              <li><Link to="/vendors" className="hover:text-accent">Vendors</Link></li>
-              <li><Link to="/notifications" className="hover:text-accent">Notifications</Link></li>
-              <li><a className="hover:text-accent">CVC Guidelines</a></li>
+              <li><Link to="/tenders" className="hover:text-accent">{t(lang, "nav_tenders")}</Link></li>
+              <li><Link to="/vendors" className="hover:text-accent">{t(lang, "nav_vendors")}</Link></li>
+              <li><Link to="/notifications" className="hover:text-accent">{t(lang, "nav_notifications")}</Link></li>
+              <li><a className="hover:text-accent cursor-pointer">{t(lang, "footer_cvc_guidelines")}</a></li>
             </ul>
           </div>
           <div>
-            <h3 className="mb-2 text-sm font-semibold">Help Desk</h3>
+            <h3 className="mb-2 text-sm font-semibold">{t(lang, "footer_help_desk")}</h3>
             <ul className="space-y-1.5 text-xs text-primary-foreground/75">
               <li className="flex items-center gap-2"><Phone className="h-3 w-3" /> 1800-3070-2232 (Toll Free)</li>
               <li className="flex items-center gap-2"><Mail className="h-3 w-3" /> helpdesk@apeprocurement.gov.in</li>
@@ -213,7 +333,7 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
             </ul>
           </div>
           <div>
-            <h3 className="mb-2 text-sm font-semibold">Compliance</h3>
+            <h3 className="mb-2 text-sm font-semibold">{t(lang, "footer_compliance")}</h3>
             <ul className="space-y-1 text-xs text-primary-foreground/75">
               <li>GFR 2017 Compliant</li>
               <li>CVC Guidelines</li>
@@ -223,7 +343,7 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
           </div>
         </div>
         <div className="border-t border-primary-foreground/15 bg-[hsl(208_82%_18%)] px-4 py-3 text-center text-[11px] text-primary-foreground/75 md:px-8">
-          © {new Date().getFullYear()} Government of Andhra Pradesh · Tender Inviting Authority Console · Version 4.2.1
+          © {new Date().getFullYear()} {t(lang, "footer_copyright")}
         </div>
       </footer>
     </div>

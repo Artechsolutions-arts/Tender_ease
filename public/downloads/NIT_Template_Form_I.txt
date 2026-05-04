@@ -1,0 +1,135 @@
+================================================================================
+GOVERNMENT OF ANDHRA PRADESH
+e-PROCUREMENT PORTAL
+NOTICE INVITING TENDER (NIT) — FORM I
+GFR 2017 Compliant | CVC Guidelines Applicable
+================================================================================
+
+NIT No.         : ___________________________
+Name of Work    : ___________________________
+Department      : ___________________________
+Division        : ___________________________
+Tender Ref. No. : ___________________________
+Date of Issue   : ___________________________
+
+--------------------------------------------------------------------------------
+SECTION 1 — BASIC DETAILS
+--------------------------------------------------------------------------------
+1.1  Name of Work / Supply / Service:
+     ___________________________________________________________________________
+
+1.2  Estimated Cost (₹):
+     ___________________________________________________________________________
+
+1.3  Earnest Money Deposit (EMD) Amount (₹):
+     ___________________________________________________________________________
+
+1.4  Performance Security (% of contract value):
+     ___________________________________________________________________________
+
+1.5  Time for Completion:
+     ___________________________________________________________________________
+
+--------------------------------------------------------------------------------
+SECTION 2 — SCHEDULE OF DATES
+--------------------------------------------------------------------------------
+Sl.  Event                                   Date & Time
+---  ----------------------------------------  ---------------------------------
+1    Date of Publication of NIT              :
+2    Last Date for Seeking Clarifications    :
+3    Pre-Bid Meeting (if applicable)         :
+4    Last Date for Submission of Bids        :
+5    Date & Time of Opening of Technical Bid :
+6    Date & Time of Opening of Financial Bid :
+7    Validity of Bid                         :  90 days from last submission date
+
+--------------------------------------------------------------------------------
+SECTION 3 — ELIGIBILITY CRITERIA
+--------------------------------------------------------------------------------
+3.1  Registration: Bidder must be a registered firm / company under applicable laws.
+
+3.2  Technical Qualification:
+     (a) Similar works executed in the last 5 years:
+         - One similar work of value ≥ 80% of estimated cost, OR
+         - Two similar works each ≥ 60% of estimated cost, OR
+         - Three similar works each ≥ 40% of estimated cost
+
+3.3  Financial Qualification:
+     (a) Annual turnover ≥ ₹ _______________ during last 3 financial years
+     (b) Net worth positive in last financial year
+
+3.4  GST Registration: Mandatory
+
+3.5  PAN Card: Mandatory
+
+3.6  MSME / Startup Registration (if applicable): Preference as per GFR 2017 Rule 153
+
+--------------------------------------------------------------------------------
+SECTION 4 — DOCUMENTS REQUIRED FROM BIDDER
+--------------------------------------------------------------------------------
+Technical Envelope:
+[ ] PAN Card (self-attested)
+[ ] GST Registration Certificate
+[ ] Company Registration / Incorporation Certificate
+[ ] EMD Proof (Demand Draft / Bank Guarantee)
+[ ] Tender Fee Receipt
+[ ] Audited Financial Statements (last 3 years)
+[ ] Income Tax Returns (last 3 years)
+[ ] Bank Solvency Certificate
+[ ] Technical Bid / Proposal
+[ ] Past Experience / Work Order Copies (≥ 3 nos.)
+[ ] ISO / Quality Certifications (if applicable)
+[ ] Power of Attorney (if bid signed by authorised rep.)
+[ ] Self-Declaration of Non-Blacklisting / Non-Debarment
+[ ] MSME / Startup Registration Certificate (if applicable)
+
+Financial Envelope:
+[ ] Financial Bid / Price Schedule (BOQ)
+[ ] Rate Analysis (if required)
+
+--------------------------------------------------------------------------------
+SECTION 5 — TERMS AND CONDITIONS
+--------------------------------------------------------------------------------
+5.1  The tendering authority reserves the right to accept or reject any or all
+     bids without assigning any reason thereof.
+
+5.2  Conditional tenders shall be summarily rejected.
+
+5.3  Canvassing in any form will disqualify the bidder.
+
+5.4  Bids received after the due date and time shall not be considered.
+
+5.5  The successful bidder shall execute an agreement on ₹100 stamp paper within
+     15 days of issue of Letter of Award (LoA).
+
+5.6  Arbitration: Disputes shall be resolved as per the Arbitration and
+     Conciliation Act, 1996.
+
+5.7  Jurisdiction: Courts at ______________________ shall have jurisdiction.
+
+--------------------------------------------------------------------------------
+SECTION 6 — OFFICER DETAILS
+--------------------------------------------------------------------------------
+Tender Inviting Authority (TIA):
+Name          : ___________________________
+Designation   : ___________________________
+Department    : ___________________________
+Address       : ___________________________
+Phone         : ___________________________
+Email         : ___________________________
+
+--------------------------------------------------------------------------------
+DECLARATION
+--------------------------------------------------------------------------------
+Certified that this NIT has been prepared in accordance with GFR 2017,
+CVC Guidelines dated ____________, and e-Procurement Policy of Government of
+Andhra Pradesh.
+
+Signature of TIA : ___________________________
+Date             : ___________________________
+Seal             : ___________________________
+
+================================================================================
+Government of Andhra Pradesh · e-Procurement Portal · Version 4.2.1
+For queries: helpdesk@apeprocurement.gov.in | 1800-3070-2232 (Toll Free)
+================================================================================

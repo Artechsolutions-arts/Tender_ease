@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin, Clock, MessageSquare, Send, Search, Ticket, BookOpen, Video, Download, ChevronRight, HelpCircle, AlertCircle, CheckCircle2, User } from "lucide-react";
+import { useT } from "@/lib/useT";
 
 interface SupportTicket {
   id: string;
@@ -53,6 +54,7 @@ const STATUS_TONE: Record<SupportTicket["status"], string> = {
 
 export default function HelpDesk() {
   const { toast } = useToast();
+  const T = useT();
   const [tickets, setTickets] = useState<SupportTicket[]>(SAMPLE_TICKETS);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ subject: "", category: "Tender Mgmt", priority: "Medium" as SupportTicket["priority"], description: "" });
@@ -90,8 +92,8 @@ export default function HelpDesk() {
 
   return (
     <AdminLayout
-      title="Help Desk & Support"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Support" }, { label: "Help Desk" }]}
+      title={T("help_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_help") }]}
       actions={
         <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-xs text-accent-foreground hover:bg-accent/90">
           <MessageSquare className="h-3.5 w-3.5" /> Live Chat

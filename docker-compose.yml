@@ -1,0 +1,64 @@
+name: ap-eprocurement
+
+services:
+
+  # ─── Python FastAPI Backend ───────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:         postgresql://postgres:${POSTGRES_PASSWORD_ENCODED:-Joseph%4029}@host.docker.internal:5432/ap_eprocurement
+      JWT_SECRET:           ${JWT_SECRET:-AP_eProcure_JWT_Secret_2024_Change_In_Prod}
+      JWT_EXPIRES_IN:       15m
+      JWT_REFRESH_SECRET:   ${JWT_REFRESH_SECRET:-AP_eProcure_Refresh_2024_Change_In_Prod}
+      JWT_REFRESH_EXPIRES_IN: 7d
+      PORT:                 3000
+      NODE_ENV:             production
+      FRONTEND_URL:         http://localhost
+      OLLAMA_HOST:          ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL:         ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_VISION_MODEL:  ${OLLAMA_VISION_MODEL:-qwen2.5vl:3b}
+      UPLOADS_DIR:          /app/uploads
+      SMTP_HOST:            ${SMTP_HOST:-}
+      SMTP_PORT:            ${SMTP_PORT:-587}
+      SMTP_USER:            ${SMTP_USER:-}
+      SMTP_PASS:            ${SMTP_PASS:-}
+      SMTP_FROM:            ${SMTP_FROM:-AP e-Procurement <noreply@apeprocurement.gov.in>}
+    volumes:
+      - document_uploads:/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─── React Frontend (nginx) ───────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - internal
+
+volumes:
+  document_uploads:
+    driver: local
+
+networks:
+  internal:
+    driver: bridge

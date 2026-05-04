@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +16,13 @@ import { TenderFormDialog } from "@/components/admin/TenderFormDialog";
 import { useAdmin, fmtINR, fmtDate, fmtDateTime, nextStatuses, TENDER_STATUSES, type Tender, type TenderStatus } from "@/store/admin-store";
 import { Plus, Search, Pencil, Eye, History, ArrowRight, Trash2, FileText, ShieldCheck, Award } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/useT";
 
 export default function Tenders() {
   const { tenders, vendors, changeStatus, deleteTender } = useAdmin();
-  const [query, setQuery] = useState("");
+  const T = useT();
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [statusFilter, setStatusFilter] = useState<TenderStatus | "All">("All");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Tender | undefined>();
@@ -28,9 +32,15 @@ export default function Tenders() {
   const [awardVendor, setAwardVendor] = useState<string>("");
 
   const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const exactIdMatch = q ? tenders.find((t) => t.id.toLowerCase() === q) : null;
     return tenders.filter((t) => {
-      const q = query.toLowerCase();
-      const matchQ = !q || t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q) || t.department.toLowerCase().includes(q);
+      const matchQ = !q
+        || (exactIdMatch ? t.id.toLowerCase() === q : (
+          t.id.toLowerCase().includes(q)
+          || t.name.toLowerCase().includes(q)
+          || t.department.toLowerCase().includes(q)
+        ));
       const matchS = statusFilter === "All" || t.status === statusFilter;
       return matchQ && matchS;
     });
@@ -55,11 +65,11 @@ export default function Tenders() {
 
   return (
     <AdminLayout
-      title="Tender Management"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Officer Console", to: "/" }, { label: "Tenders" }]}
+      title={T("tenders_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("common_officer_console"), to: "/" }, { label: T("nav_tenders") }]}
       actions={
         <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-3.5 w-3.5" /> Create Tender
+          <Plus className="h-3.5 w-3.5" /> {T("tenders_create")}
         </Button>
       }
     >
@@ -67,18 +77,18 @@ export default function Tenders() {
         <div className="flex flex-col gap-3 border-b border-border bg-secondary/40 p-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold uppercase tracking-wide text-primary">All Tenders</h3>
-            <span className="text-xs text-muted-foreground">({rows.length} of {tenders.length})</span>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-primary">{T("tenders_all")}</h3>
+            <span className="text-xs text-muted-foreground">({rows.length} {T("common_of")} {tenders.length})</span>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by ID, name, dept…" className="h-8 pl-8 sm:w-64" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={T("tenders_search")} className="h-8 pl-8 sm:w-64" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as TenderStatus | "All")}>
               <SelectTrigger className="h-8 sm:w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="All">{T("tenders_all_statuses")}</SelectItem>
                 {TENDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -89,14 +99,14 @@ export default function Tenders() {
           <Table>
             <TableHeader>
               <TableRow className="bg-secondary/30 hover:bg-secondary/30">
-                <TableHead className="pl-4">Tender ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Dept.</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Deadline</TableHead>
-                <TableHead>Eligible</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="pr-4 text-right">Actions</TableHead>
+                <TableHead className="pl-4">{T("tenders_col_id")}</TableHead>
+                <TableHead>{T("tenders_col_name")}</TableHead>
+                <TableHead>{T("tenders_col_dept")}</TableHead>
+                <TableHead>{T("tenders_col_value")}</TableHead>
+                <TableHead>{T("tenders_col_deadline")}</TableHead>
+                <TableHead>{T("tenders_col_eligible")}</TableHead>
+                <TableHead>{T("tenders_col_status")}</TableHead>
+                <TableHead className="pr-4 text-right">{T("tenders_col_actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -114,21 +124,21 @@ export default function Tenders() {
                   <TableCell><TenderStatusBadge status={t.status} /></TableCell>
                   <TableCell className="pr-4">
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="View" onClick={() => setViewing(t)}><Eye className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => setEditing(t)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Version History" onClick={() => setHistoryFor(t)}><History className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title={T("tenders_view")} onClick={() => setViewing(t)}><Eye className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title={T("tenders_edit")} onClick={() => setEditing(t)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title={T("tenders_history")} onClick={() => setHistoryFor(t)}><History className="h-3.5 w-3.5" /></Button>
                       {nextStatuses(t.status).length > 0 && (
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-info" title={`→ ${nextStatuses(t.status)[0]}`} onClick={() => handleAdvance(t)}><ArrowRight className="h-3.5 w-3.5" /></Button>
                       )}
                       {t.status === "Draft" && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete" onClick={() => { deleteTender(t.id); toast.success("Tender deleted"); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title={T("tenders_delete")} onClick={() => { deleteTender(t.id); toast.success("Tender deleted"); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                       )}
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">No tenders match your filters.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">{T("tenders_no_match")}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -152,20 +162,20 @@ export default function Tenders() {
               <div className="space-y-3 text-sm">
                 <p className="text-muted-foreground">{viewing.description}</p>
                 <div className="grid grid-cols-2 gap-3 rounded-sm bg-secondary/40 p-3 text-xs">
-                  <div><p className="text-muted-foreground">Estimated Value</p><p className="font-bold text-primary">{fmtINR(viewing.estimatedValue)}</p></div>
-                  <div><p className="text-muted-foreground">Created</p><p>{fmtDate(viewing.createdAt)}</p></div>
-                  <div><p className="text-muted-foreground">Start</p><p>{fmtDate(viewing.startDate)}</p></div>
-                  <div><p className="text-muted-foreground">Deadline</p><p>{fmtDate(viewing.endDate)}</p></div>
+                  <div><p className="text-muted-foreground">{T("tenders_dialog_est_value")}</p><p className="font-bold text-primary">{fmtINR(viewing.estimatedValue)}</p></div>
+                  <div><p className="text-muted-foreground">{T("tenders_dialog_created")}</p><p>{fmtDate(viewing.createdAt)}</p></div>
+                  <div><p className="text-muted-foreground">{T("tenders_dialog_start")}</p><p>{fmtDate(viewing.startDate)}</p></div>
+                  <div><p className="text-muted-foreground">{T("tenders_dialog_deadline")}</p><p>{fmtDate(viewing.endDate)}</p></div>
                   {viewing.awardedVendorId && (
-                    <div className="col-span-2 flex items-center gap-2 rounded-sm bg-success/10 p-2"><Award className="h-4 w-4 text-success" /><span className="font-semibold text-success">Awarded to {vendorName(viewing.awardedVendorId)}</span></div>
+                    <div className="col-span-2 flex items-center gap-2 rounded-sm bg-success/10 p-2"><Award className="h-4 w-4 text-success" /><span className="font-semibold text-success">{T("tenders_dialog_awarded_to")} {vendorName(viewing.awardedVendorId)}</span></div>
                   )}
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase text-primary">Documents</p>
+                  <p className="mb-1 text-xs font-semibold uppercase text-primary">{T("tenders_dialog_docs")}</p>
                   <ul className="space-y-1 text-xs">{viewing.documents.map((d) => <li key={d.id} className="rounded-sm bg-secondary/40 px-2 py-1">📎 {d.name} <span className="text-muted-foreground">· {d.size}</span></li>)}</ul>
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase text-primary">Eligible Vendors ({viewing.eligibleVendorIds.length})</p>
+                  <p className="mb-1 text-xs font-semibold uppercase text-primary">{T("tenders_dialog_eligible_vendors")} ({viewing.eligibleVendorIds.length})</p>
                   <ul className="space-y-1 text-xs">{viewing.eligibleVendorIds.map((id) => <li key={id} className="rounded-sm bg-secondary/40 px-2 py-1">🏢 {vendorName(id)} <span className="text-muted-foreground">({id})</span></li>)}</ul>
                 </div>
               </div>
@@ -180,17 +190,17 @@ export default function Tenders() {
           {historyFor && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Version History · {historyFor.id}</DialogTitle>
-                <DialogDescription>{historyFor.history.length} previous version(s) on record. Current is v{historyFor.history.length + 1}.</DialogDescription>
+                <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> {T("tenders_history_title")} · {historyFor.id}</DialogTitle>
+                <DialogDescription>{historyFor.history.length} {T("common_previous_versions")} {T("common_current_is")} v{historyFor.history.length + 1}.</DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
                 <div className="rounded-sm border-l-4 border-accent bg-accent/5 p-3">
-                  <p className="text-xs font-bold text-accent">CURRENT · v{historyFor.history.length + 1}</p>
+                  <p className="text-xs font-bold text-accent">{T("tenders_history_current")} · v{historyFor.history.length + 1}</p>
                   <p className="text-sm font-medium">{historyFor.name}</p>
-                  <p className="text-xs text-muted-foreground">Deadline: {fmtDate(historyFor.endDate)} · Eligible: {historyFor.eligibleVendorIds.length} vendors · Value: {fmtINR(historyFor.estimatedValue)}</p>
+                  <p className="text-xs text-muted-foreground">{T("tenders_history_deadline")}: {fmtDate(historyFor.endDate)} · {T("tenders_col_eligible")}: {historyFor.eligibleVendorIds.length} {T("tenders_history_eligible")} · {T("tenders_col_value")}: {fmtINR(historyFor.estimatedValue)}</p>
                 </div>
                 {historyFor.history.length === 0 && (
-                  <p className="rounded-sm border border-dashed border-border p-6 text-center text-xs text-muted-foreground">No previous versions yet.</p>
+                  <p className="rounded-sm border border-dashed border-border p-6 text-center text-xs text-muted-foreground">{T("tenders_history_no_versions")}</p>
                 )}
                 {historyFor.history.map((v) => (
                   <div key={v.version} className="rounded-sm border border-border bg-card p-3">
@@ -199,7 +209,7 @@ export default function Tenders() {
                       <p className="text-[11px] text-muted-foreground">{fmtDateTime(v.editedAt)} · {v.editedBy}</p>
                     </div>
                     <p className="mt-1 text-xs italic text-muted-foreground">"{v.changes}"</p>
-                    <p className="mt-1 text-xs">Snapshot deadline: <span className="font-mono">{fmtDate(v.snapshot.endDate)}</span> · Eligible: {v.snapshot.eligibleVendorIds.length} vendors · Value: {fmtINR(v.snapshot.estimatedValue)}</p>
+                    <p className="mt-1 text-xs">{T("tenders_history_deadline")}: <span className="font-mono">{fmtDate(v.snapshot.endDate)}</span> · {T("tenders_col_eligible")}: {v.snapshot.eligibleVendorIds.length} {T("tenders_history_eligible")} · {T("tenders_col_value")}: {fmtINR(v.snapshot.estimatedValue)}</p>
                   </div>
                 ))}
               </div>
@@ -214,13 +224,13 @@ export default function Tenders() {
           {awardFor && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><Award className="h-4 w-4" /> Award Tender · {awardFor.id}</DialogTitle>
-                <DialogDescription>Select the winning vendor. LoA notification will be sent to the winner and acknowledgment to all other eligible bidders.</DialogDescription>
+                <DialogTitle className="flex items-center gap-2"><Award className="h-4 w-4" /> {T("tenders_award_title")} · {awardFor.id}</DialogTitle>
+                <DialogDescription>{T("tenders_award_audit_note")}</DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
-                <label className="text-xs font-semibold">Winning Vendor</label>
+                <label className="text-xs font-semibold">{T("tenders_award_winning_vendor")}</label>
                 <Select value={awardVendor} onValueChange={setAwardVendor}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={T("tenders_award_select")} /></SelectTrigger>
                   <SelectContent>
                     {awardFor.eligibleVendorIds.map((id) => {
                       const v = vendors.find((x) => x.id === id);
@@ -229,12 +239,12 @@ export default function Tenders() {
                   </SelectContent>
                 </Select>
                 <div className="rounded-sm border border-info/30 bg-info/5 p-2 text-xs text-info">
-                  <ShieldCheck className="mb-0.5 inline h-3 w-3" /> Audit log entry & version snapshot will be recorded.
+                  <ShieldCheck className="mb-0.5 inline h-3 w-3" /> {T("tenders_award_audit_note")}
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setAwardFor(undefined)}>Cancel</Button>
-                <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={confirmAward}>Issue Letter of Award</Button>
+                <Button variant="outline" onClick={() => setAwardFor(undefined)}>{T("tenders_award_cancel")}</Button>
+                <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={confirmAward}>{T("tenders_award_issue_loa")}</Button>
               </DialogFooter>
             </>
           )}

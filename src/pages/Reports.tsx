@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Download, FileText, Filter, Printer, TrendingUp, Wallet, Users, FileSpreadsheet, FileBarChart, ChevronRight } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useT } from "@/lib/useT";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const PIE = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--info))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--destructive))"];
 
 export default function Reports() {
   const { tenders, vendors } = useAdmin();
+  const T = useT();
   const [period, setPeriod] = useState<"month" | "quarter" | "fy">("fy");
   const [department, setDepartment] = useState<string>("all");
 
@@ -69,7 +72,10 @@ export default function Reports() {
   }, []);
 
   const downloadCsv = (rows: Record<string, unknown>[], filename: string) => {
-    if (!rows.length) return;
+    if (!rows.length) {
+      toast({ title: "No data to export", description: "Adjust filters or wait for data to load.", variant: "destructive" });
+      return;
+    }
     const headers = Object.keys(rows[0]);
     const csv = [
       headers.join(","),
@@ -95,8 +101,8 @@ export default function Reports() {
 
   return (
     <AdminLayout
-      title="MIS Reports & Analytics"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Reports" }, { label: "MIS Reports" }]}
+      title={T("reports_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_reports") }]}
       actions={
         <>
           <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-sm border-primary/40 text-xs text-primary hover:bg-secondary" onClick={() => window.print()}>

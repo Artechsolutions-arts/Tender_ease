@@ -10,19 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles, Trophy, FileCheck2, AlertTriangle, CheckCircle2, XCircle, Download, Gavel } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/useT";
 
 interface Bid {
   vendorId: string;
   bidAmount: number;
-  technicalScore: number; // 0-100
-  complianceScore: number; // 0-100
+  technicalScore: number;
+  complianceScore: number;
   deliveryDays: number;
-  pastPerformance: number; // 0-100
+  pastPerformance: number;
   documentsComplete: boolean;
   remarks: string;
 }
 
-// Deterministic mock bids per tender
 function generateBids(tenderId: string, vendorIds: string[], estValue: number, vendors: { id: string; pastPerformance: number; blacklisted: boolean }[]): Bid[] {
   let seed = 0;
   for (const ch of tenderId) seed = (seed * 31 + ch.charCodeAt(0)) % 100000;
@@ -32,7 +32,7 @@ function generateBids(tenderId: string, vendorIds: string[], estValue: number, v
   };
   return vendorIds.map((vid) => {
     const v = vendors.find((x) => x.id === vid);
-    const variance = 0.78 + rand() * 0.28; // 78%–106% of estimate
+    const variance = 0.78 + rand() * 0.28;
     const tech = Math.round(60 + rand() * 38);
     const comp = v?.blacklisted ? Math.round(40 + rand() * 20) : Math.round(70 + rand() * 28);
     const docsOk = comp > 65;
@@ -49,7 +49,6 @@ function generateBids(tenderId: string, vendorIds: string[], estValue: number, v
   });
 }
 
-// QCBS-style composite: 40% price, 30% technical, 20% past performance, 10% compliance
 function compositeScore(b: Bid, lowest: number) {
   const priceScore = (lowest / b.bidAmount) * 100;
   return priceScore * 0.4 + b.technicalScore * 0.3 + b.pastPerformance * 0.2 + b.complianceScore * 0.1;
@@ -57,6 +56,7 @@ function compositeScore(b: Bid, lowest: number) {
 
 export default function BidEvaluation() {
   const { tenders, vendors, changeStatus } = useAdmin();
+  const T = useT();
   const evaluable = tenders.filter((t) => ["Closed", "Evaluated", "Published"].includes(t.status));
   const [selectedId, setSelectedId] = useState<string>(evaluable[0]?.id ?? tenders[0]?.id ?? "");
 
@@ -92,21 +92,20 @@ export default function BidEvaluation() {
 
   return (
     <AdminLayout
-      title="Bid Evaluation & Comparative Analysis"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Bid Evaluation" }]}
+      title={T("be_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_bid_evaluation") }]}
       actions={
         <>
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="h-3.5 w-3.5" /> Export CER (PDF)
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
+            <Download className="h-3.5 w-3.5" /> {T("be_export_cer")}
           </Button>
           <Button size="sm" className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleAward} disabled={!tender || tender.status === "Awarded"}>
-            <Gavel className="h-3.5 w-3.5" /> Issue LoA to L1/H1
+            <Gavel className="h-3.5 w-3.5" /> {T("be_issue_loa")}
           </Button>
         </>
       }
     >
       <div className="grid gap-4">
-        {/* Tender selector + summary */}
         <Card className="border-l-4 border-l-accent">
           <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-1 items-center gap-3">
@@ -114,10 +113,10 @@ export default function BidEvaluation() {
                 <FileCheck2 className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Tender under evaluation</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{T("be_select_tender")}</p>
                 <Select value={selectedId} onValueChange={setSelectedId}>
                   <SelectTrigger className="mt-0.5 h-9 max-w-2xl border-0 bg-transparent p-0 text-sm font-bold text-primary shadow-none focus:ring-0">
-                    <SelectValue placeholder="Select a tender" />
+                    <SelectValue placeholder={T("be_select_tender")} />
                   </SelectTrigger>
                   <SelectContent>
                     {tenders.map((t) => (
@@ -132,7 +131,7 @@ export default function BidEvaluation() {
             {tender && (
               <div className="grid grid-cols-2 gap-4 text-xs md:grid-cols-4">
                 <div>
-                  <p className="text-muted-foreground">Estimate</p>
+                  <p className="text-muted-foreground">{T("tenders_dialog_est_value")}</p>
                   <p className="font-semibold text-primary">{fmtINR(tender.estimatedValue)}</p>
                 </div>
                 <div>
@@ -144,7 +143,7 @@ export default function BidEvaluation() {
                   <p className="font-semibold text-primary">{bids.length}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Status</p>
+                  <p className="text-muted-foreground">{T("tenders_col_status")}</p>
                   <Badge variant="outline" className="border-accent text-accent">{tender.status}</Badge>
                 </div>
               </div>
@@ -152,7 +151,6 @@ export default function BidEvaluation() {
           </CardContent>
         </Card>
 
-        {/* AI Recommendation */}
         {tender && winner && l1 && (
           <Card className="border-2 border-accent/40 bg-gradient-to-r from-accent/5 to-transparent">
             <CardHeader className="flex flex-row items-center gap-2 pb-2">
@@ -163,7 +161,7 @@ export default function BidEvaluation() {
             <CardContent className="grid gap-4 md:grid-cols-3">
               <div className="rounded border border-accent/30 bg-card p-3">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase text-accent">
-                  <Trophy className="h-3.5 w-3.5" /> Recommended (H1 Composite)
+                  <Trophy className="h-3.5 w-3.5" /> {T("be_winner")}
                 </div>
                 <p className="mt-1 text-sm font-bold text-primary">{vendorOf(winner.vendorId)?.companyName}</p>
                 <p className="text-xs text-muted-foreground">Composite score: <span className="font-semibold text-accent">{winner.composite.toFixed(1)}/100</span></p>
@@ -171,7 +169,7 @@ export default function BidEvaluation() {
               </div>
               <div className="rounded border border-border bg-card p-3">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase text-info">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Lowest Bidder (L1)
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {T("be_l1")}
                 </div>
                 <p className="mt-1 text-sm font-bold text-primary">{vendorOf(l1.vendorId)?.companyName}</p>
                 <p className="text-xs text-muted-foreground">Quoted: <span className="font-semibold">{fmtINR(l1.bidAmount)}</span></p>
@@ -191,12 +189,11 @@ export default function BidEvaluation() {
           </Card>
         )}
 
-        {/* Comparative + details */}
         <Tabs defaultValue="matrix">
           <TabsList>
-            <TabsTrigger value="matrix">Comparative Matrix</TabsTrigger>
-            <TabsTrigger value="technical">Technical Scores</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance Check</TabsTrigger>
+            <TabsTrigger value="matrix">{T("be_tab_comparative")}</TabsTrigger>
+            <TabsTrigger value="technical">{T("be_tab_ai")}</TabsTrigger>
+            <TabsTrigger value="compliance">{T("be_tab_compliance")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="matrix" className="mt-3">
@@ -205,14 +202,14 @@ export default function BidEvaluation() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-secondary/60">
-                      <TableHead className="w-12">Rank</TableHead>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead className="text-right">Bid Amount</TableHead>
+                      <TableHead className="w-12">{T("be_col_rank")}</TableHead>
+                      <TableHead>{T("be_col_vendor")}</TableHead>
+                      <TableHead className="text-right">{T("be_col_bid")}</TableHead>
                       <TableHead className="text-right">vs Est.</TableHead>
-                      <TableHead className="text-center">Tech</TableHead>
-                      <TableHead className="text-center">Past Perf.</TableHead>
-                      <TableHead className="text-center">Compliance</TableHead>
-                      <TableHead className="text-right">Composite</TableHead>
+                      <TableHead className="text-center">{T("be_col_technical")}</TableHead>
+                      <TableHead className="text-center">{T("be_col_past")}</TableHead>
+                      <TableHead className="text-center">{T("be_col_compliance")}</TableHead>
+                      <TableHead className="text-right">{T("be_col_composite")}</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -249,7 +246,7 @@ export default function BidEvaluation() {
                     })}
                     {ranked.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">No bids received for this tender.</TableCell>
+                        <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">{T("be_no_bids")}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -296,12 +293,12 @@ export default function BidEvaluation() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-secondary/60">
-                      <TableHead>Vendor</TableHead>
+                      <TableHead>{T("be_col_vendor")}</TableHead>
                       <TableHead className="text-center">GST</TableHead>
                       <TableHead className="text-center">PAN</TableHead>
                       <TableHead className="text-center">EMD / BG</TableHead>
                       <TableHead className="text-center">Blacklist</TableHead>
-                      <TableHead>Remarks</TableHead>
+                      <TableHead>{T("be_col_remarks")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -329,7 +326,7 @@ export default function BidEvaluation() {
         {tender && tender.status === "Closed" && (
           <div className="flex justify-end">
             <Button variant="outline" onClick={handleMarkEvaluated} className="gap-1.5">
-              <FileCheck2 className="h-3.5 w-3.5" /> Finalize Evaluation Report
+              <FileCheck2 className="h-3.5 w-3.5" /> {T("be_mark_evaluated")}
             </Button>
           </div>
         )}

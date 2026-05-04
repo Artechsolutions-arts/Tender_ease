@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,12 +18,12 @@ import HelpDesk from "./pages/HelpDesk.tsx";
 import VendorDashboard from "./pages/VendorDashboard.tsx";
 import VendorSignup from "./pages/VendorSignup.tsx";
 import VendorVerification from "./pages/VendorVerification.tsx";
+import Documents from "./pages/Documents.tsx";
 import { AdminStoreProvider } from "./store/admin-store.tsx";
 import Login from "./pages/Login.tsx";
 import { AuthProvider } from "./store/auth-store.tsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
-
-const queryClient = new QueryClient();
+import { LangProvider } from "./store/lang-store.tsx";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,6 +31,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <LangProvider>
         <AuthProvider>
           <AdminStoreProvider>
             <Routes>
@@ -47,11 +49,13 @@ const App = () => (
               <Route path="/compliance" element={<ProtectedRoute roles={["admin"]}><Compliance /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute roles={["admin"]}><HelpDesk /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute roles={["admin", "vendor"]}><Notifications /></ProtectedRoute>} />
+              <Route path="/documents" element={<ProtectedRoute roles={["admin", "vendor"]}><Documents /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AdminStoreProvider>
         </AuthProvider>
+        </LangProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

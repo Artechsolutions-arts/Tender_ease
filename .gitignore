@@ -1,3 +1,8 @@
+# Environment — keep .env.docker (template) but exclude real secrets
+.env
+.env.local
+!.env.docker
+
 # Logs
 logs
 *.log

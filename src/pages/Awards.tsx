@@ -10,9 +10,11 @@ import { Award, Download, FileCheck2, Gavel, IndianRupee, Search, ShieldCheck, T
 import { fmtDate, fmtINR, useAdmin, type Tender } from "@/store/admin-store";
 import { TenderStatusBadge } from "@/components/admin/TenderStatusBadge";
 import { toast } from "@/hooks/use-toast";
+import { useT } from "@/lib/useT";
 
 export default function Awards() {
   const { tenders, vendors } = useAdmin();
+  const T = useT();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Tender | null>(null);
 
@@ -35,9 +37,30 @@ export default function Awards() {
 
   const totalValue = filtered.reduce((s, t) => s + t.estimatedValue, 0);
   const uniqueVendors = new Set(filtered.map((t) => t.awardedVendorId)).size;
-  const avgCycle = 18; // mock cycle days
+  const avgCycle = 18;
 
   const vendorOf = (id?: string) => vendors.find((v) => v.id === id);
+
+  const downloadRegister = () => {
+    if (!filtered.length) {
+      toast({ title: "No data", description: "No awarded tenders to export.", variant: "destructive" });
+      return;
+    }
+    const headers = ["Tender ID", "Name", "Department", "Category", "Vendor", "Value (INR)", "Signed On"];
+    const rows = filtered.map((t) => {
+      const v = vendorOf(t.awardedVendorId);
+      return [t.id, t.name, t.department, t.category, v?.companyName ?? "—", t.estimatedValue, t.signedAt ? fmtDate(t.signedAt) : "—"];
+    });
+    const csv = [headers, ...rows].map((r) => r.map((c) => JSON.stringify(c ?? "")).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `awards-register-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Register exported", description: `${filtered.length} award(s) downloaded as CSV.` });
+  };
 
   const downloadLoA = (t: Tender) => {
     const v = vendorOf(t.awardedVendorId);
@@ -78,21 +101,20 @@ Tender Inviting Authority`;
 
   return (
     <AdminLayout
-      title="Awards & Letter of Award (LoA) Register"
-      breadcrumbs={[{ label: "Home", to: "/" }, { label: "Awards / LoA" }]}
+      title={T("awards_title")}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_awards") }]}
       actions={
-        <Button variant="outline" size="sm" onClick={() => toast({ title: "Register exported", description: "CSV register queued for download." })}>
+        <Button variant="outline" size="sm" onClick={downloadRegister}>
           <Download className="mr-1.5 h-3.5 w-3.5" /> Export Register
         </Button>
       }
     >
       <div className="space-y-5">
-        {/* KPI strip */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <Card className="border-l-4 border-l-success">
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contracts Awarded</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T("awards_total")}</p>
                 <p className="mt-1 text-2xl font-bold text-primary">{awarded.length}</p>
                 <p className="text-[11px] text-success">FY 2025-26</p>
               </div>
@@ -102,7 +124,7 @@ Tender Inviting Authority`;
           <Card className="border-l-4 border-l-primary">
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Award Value</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T("awards_value")}</p>
                 <p className="mt-1 text-2xl font-bold text-primary">{fmtINR(totalValue)}</p>
                 <p className="text-[11px] text-muted-foreground">across {filtered.length} contract(s)</p>
               </div>
@@ -112,7 +134,7 @@ Tender Inviting Authority`;
           <Card className="border-l-4 border-l-info">
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Unique Vendors</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{T("vendors_total")}</p>
                 <p className="mt-1 text-2xl font-bold text-primary">{uniqueVendors}</p>
                 <p className="text-[11px] text-info">empanelled & active</p>
               </div>
@@ -131,7 +153,6 @@ Tender Inviting Authority`;
           </Card>
         </div>
 
-        {/* Awards register */}
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b bg-secondary/40 py-3">
             <div>
@@ -154,14 +175,14 @@ Tender Inviting Authority`;
             <Table>
               <TableHeader>
                 <TableRow className="bg-secondary/30">
-                  <TableHead className="w-[140px]">LoA / Tender ID</TableHead>
-                  <TableHead>Tender Name</TableHead>
-                  <TableHead>Awarded Vendor</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead className="text-right">Contract Value</TableHead>
+                  <TableHead className="w-[140px]">LoA / {T("tenders_col_id")}</TableHead>
+                  <TableHead>{T("awards_col_tender")}</TableHead>
+                  <TableHead>{T("awards_col_vendor")}</TableHead>
+                  <TableHead>{T("awards_col_dept")}</TableHead>
+                  <TableHead className="text-right">{T("awards_col_value")}</TableHead>
                   <TableHead>Award Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{T("tenders_col_status")}</TableHead>
+                  <TableHead className="text-right">{T("tenders_col_actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -188,9 +209,9 @@ Tender Inviting Authority`;
                       <TableCell><TenderStatusBadge status={t.status} /></TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => setSelected(t)}>View</Button>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => setSelected(t)}>{T("common_view")}</Button>
                           <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => downloadLoA(t)}>
-                            <Download className="mr-1 h-3 w-3" /> LoA
+                            <Download className="mr-1 h-3 w-3" /> {T("awards_download_loa")}
                           </Button>
                         </div>
                       </TableCell>
@@ -200,7 +221,7 @@ Tender Inviting Authority`;
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="py-10 text-center text-xs text-muted-foreground">
-                      No awarded contracts {query ? "match your search" : "yet"}.
+                      {T("awards_no_awards")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -210,7 +231,6 @@ Tender Inviting Authority`;
         </Card>
       </div>
 
-      {/* LoA detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-2xl">
           {selected && (() => {
@@ -240,12 +260,12 @@ Tender Inviting Authority`;
                       <p className="mt-1 text-muted-foreground">{selected.description}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Tender ID" value={selected.id} />
-                      <Field label="Department" value={selected.department} />
-                      <Field label="Category" value={selected.category} />
-                      <Field label="Contract Value" value={fmtINR(selected.estimatedValue)} highlight />
-                      <Field label="Bid Period" value={`${fmtDate(selected.startDate)} → ${fmtDate(selected.endDate)}`} />
-                      <Field label="Eligible Bidders" value={`${selected.eligibleVendorIds.length} vendor(s)`} />
+                      <Field label={T("tenders_col_id")} value={selected.id} />
+                      <Field label={T("tenders_col_dept")} value={selected.department} />
+                      <Field label={T("vendors_col_category")} value={selected.category} />
+                      <Field label={T("awards_col_value")} value={fmtINR(selected.estimatedValue)} highlight />
+                      <Field label={T("awards_col_bid_period")} value={`${fmtDate(selected.startDate)} → ${fmtDate(selected.endDate)}`} />
+                      <Field label={T("awards_col_eligible")} value={`${selected.eligibleVendorIds.length} vendor(s)`} />
                     </div>
                   </TabsContent>
 
@@ -258,12 +278,12 @@ Tender Inviting Authority`;
                           <p className="text-muted-foreground">{v.contactPerson} · {v.email} · {v.phone}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <Field label="Vendor ID" value={v.id} />
-                          <Field label="Category" value={v.category} />
+                          <Field label={T("vendors_col_id")} value={v.id} />
+                          <Field label={T("vendors_col_category")} value={v.category} />
                           <Field label="GST" value={v.gst} />
                           <Field label="PAN" value={v.pan} />
-                          <Field label="Past Performance" value={`${v.pastPerformance}/100`} highlight />
-                          <Field label="Completed Tenders" value={`${v.completedTenders}`} />
+                          <Field label={T("vendors_col_performance")} value={`${v.pastPerformance}/100`} highlight />
+                          <Field label={T("awards_col_completed")} value={`${v.completedTenders}`} />
                         </div>
                       </>
                     ) : (
@@ -288,9 +308,9 @@ Tender Inviting Authority`;
                 </Tabs>
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setSelected(null)}>Close</Button>
+                  <Button variant="outline" onClick={() => setSelected(null)}>{T("common_cancel")}</Button>
                   <Button onClick={() => downloadLoA(selected)}>
-                    <Download className="mr-1.5 h-3.5 w-3.5" /> Download LoA
+                    <Download className="mr-1.5 h-3.5 w-3.5" /> {T("awards_download_loa")}
                   </Button>
                 </DialogFooter>
               </>

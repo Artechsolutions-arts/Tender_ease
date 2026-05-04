@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
-
+import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
+import { apiClient } from "@/lib/api";
 
 export type UserRole = "admin" | "vendor";
 
@@ -13,60 +13,24 @@ export interface DemoUser {
   verificationStep?: 1 | 2 | 3 | 4 | 5;
 }
 
-interface DemoAccount extends DemoUser {
-  password: string;
-}
-
-const initialDemoAccounts: DemoAccount[] = [
-  {
-    email: "admin@apeprocurement.gov.in",
-    password: "admin123",
-    name: "Sri. R. Venkatesh, IAS",
-    role: "admin",
-    organization: "Tender Inviting Authority · R&B Dept.",
-  },
-  {
-    email: "vendor@coastalinfra.in",
-    password: "vendor123",
-    name: "S. Reddy",
-    role: "vendor",
-    organization: "Coastal Infra Engineers",
-    vendorId: "VND-1004",
-  },
-  {
-    email: "ramya@gmail.com",
-    password: "password",
-    name: "Ramya",
-    role: "vendor",
-    organization: "AR",
-    vendorId: "VEN-2026-1045",
-    isVerificationPending: true,
-    verificationStep: 2,
-  },
-];
-
 interface AuthCtx {
   currentUser: DemoUser | null;
-  demoAccounts: Pick<DemoAccount, "email" | "password" | "role" | "organization">[];
-  login: (email: string, password: string) => DemoUser | null;
+  login: (email: string, password: string) => Promise<DemoUser | null>;
   logout: () => void;
-  registerVendor: (account: Omit<DemoAccount, "role" | "vendorId">) => void;
+  registerVendor: (account: { email: string; password: string; name: string; organization: string }) => Promise<void>;
   updateVerificationStep: (step: number) => void;
   submitVerification: () => void;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+function mapApiRole(role: string): UserRole {
+  return role === "ADMIN" ? "admin" : "vendor";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [accounts, setAccounts] = useState<DemoAccount[]>(() => {
-    try {
-      const saved = localStorage.getItem("demoAccounts");
-      return saved ? JSON.parse(saved) : initialDemoAccounts;
-    } catch {
-      return initialDemoAccounts;
-    }
-  });
   const [currentUser, setCurrentUser] = useState<DemoUser | null>(() => {
+    localStorage.removeItem("demoAccounts");
     try {
       const saved = localStorage.getItem("currentUser");
       return saved ? JSON.parse(saved) : null;
@@ -76,10 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem("demoAccounts", JSON.stringify(accounts));
-  }, [accounts]);
-
-  useEffect(() => {
     if (currentUser) {
       localStorage.setItem("currentUser", JSON.stringify(currentUser));
     } else {
@@ -87,56 +47,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
-  const login = useCallback((email: string, password: string) => {
-    const account = accounts.find(
-      (item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.password === password,
-    );
-    if (!account) return null;
-    const { password: _password, ...user } = account;
-    setCurrentUser(user);
-    return user;
-  }, [accounts]);
-
-  const logout = useCallback(() => setCurrentUser(null), []);
-
-  const registerVendor = useCallback((account: Omit<DemoAccount, "role" | "vendorId">) => {
-    const newVendor: DemoAccount = {
-      ...account,
-      role: "vendor",
-      vendorId: `VEN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      isVerificationPending: true,
-      verificationStep: 2,
+  const login = useCallback(async (email: string, password: string): Promise<DemoUser | null> => {
+    const res = await apiClient.post<{ accessToken: string; refreshToken: string; user: any }>("/auth/login", { email, password });
+    const { accessToken, refreshToken, user } = res.data;
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("lastLoginAt", new Date().toISOString());
+    const mapped: DemoUser = {
+      email: user.email,
+      name: user.name,
+      role: mapApiRole(user.role),
+      organization: user.organization,
+      vendorId: user.vendorId ?? undefined,
+      isVerificationPending: !user.isVerified,
+      verificationStep: user.verificationStep === "COMPLETED" ? 5 : (user.verificationStep ? Number(user.verificationStep.replace("STEP_", "")) as 1 | 2 | 3 | 4 | 5 : undefined),
     };
-    setAccounts((prev) => [...prev, newVendor]);
+    setCurrentUser(mapped);
+    return mapped;
   }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (refreshToken) {
+      apiClient.post("/auth/logout", { refreshToken }).catch(() => {});
+    }
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     setCurrentUser(null);
-    localStorage.removeItem("currentUser");
-  };
+  }, []);
 
-  const updateVerificationStep = (step: number) => {
+  const registerVendor = useCallback(async (account: { email: string; password: string; name: string; organization: string }) => {
+    const res = await apiClient.post<{ accessToken: string; refreshToken: string; user: any }>("/auth/register-vendor", {
+      email: account.email,
+      password: account.password,
+      name: account.name,
+      organization: account.organization,
+    });
+    const { accessToken, refreshToken, user } = res.data;
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    setCurrentUser({
+      email: user.email,
+      name: user.name,
+      role: "vendor",
+      organization: user.organization,
+      vendorId: user.vendorId,
+      isVerificationPending: true,
+      verificationStep: 1,
+    });
+  }, []);
+
+  const updateVerificationStep = useCallback((step: number) => {
     if (!currentUser) return;
-    const updated = { ...currentUser, verificationStep: step as 1 | 2 | 3 | 4 | 5 };
-    setCurrentUser(updated);
-    setAccounts(prev => prev.map(a => a.email === currentUser.email ? { ...a, verificationStep: step as 1 | 2 | 3 | 4 | 5 } : a));
-    localStorage.setItem("currentUser", JSON.stringify(updated));
-  };
+    setCurrentUser({ ...currentUser, verificationStep: step as 1 | 2 | 3 | 4 | 5 });
+    apiClient.patch("/auth/verification-step", { step }).catch(() => {});
+  }, [currentUser]);
 
-  const submitVerification = () => {
+  const submitVerification = useCallback(() => {
     if (!currentUser) return;
-    const updated = { ...currentUser, isVerificationPending: true, verificationStep: 4 as 1 | 2 | 3 | 4 | 5 };
-    setCurrentUser(updated);
-    setAccounts(prev => prev.map(a => a.email === currentUser.email ? { ...a, isVerificationPending: true, verificationStep: 4 as 1 | 2 | 3 | 4 | 5 } : a));
-    localStorage.setItem("currentUser", JSON.stringify(updated));
-  };
+    setCurrentUser({ ...currentUser, isVerificationPending: true, verificationStep: 4 });
+    apiClient.patch("/auth/verification-step", { step: 4 }).catch(() => {});
+  }, [currentUser]);
 
-  const publicAccounts = useMemo(
-    () => accounts.map(({ email, password, role, organization }) => ({ email, password, role, organization })),
-    [accounts],
+  return (
+    <Ctx.Provider value={{ currentUser, login, logout, registerVendor, updateVerificationStep, submitVerification }}>
+      {children}
+    </Ctx.Provider>
   );
-
-  return <Ctx.Provider value={{ currentUser, demoAccounts: publicAccounts, login, logout, registerVendor, updateVerificationStep, submitVerification }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

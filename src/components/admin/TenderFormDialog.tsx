@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,7 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
   const [changeNote, setChangeNote] = useState("");
   const [requiredDocs, setRequiredDocs] = useState<string[]>([]);
   const [customDoc, setCustomDoc] = useState("");
+  const [vendorCategoryFilter, setVendorCategoryFilter] = useState("All");
 
   useEffect(() => {
     if (open) {
@@ -68,6 +69,7 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
       setChangeNote("");
       setRequiredDocs((tender as any)?.requiredDocuments ?? []);
       setCustomDoc("");
+      setVendorCategoryFilter("All");
     }
   }, [open, tender]);
 
@@ -81,6 +83,24 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
   };
 
   const removeDoc = (id: string) => setDocs((d) => d.filter((x) => x.id !== id));
+
+  const vendorCategories = useMemo(() => ["All", ...Array.from(new Set(vendors.map((v) => v.category)))], [vendors]);
+
+  const filteredVendors = useMemo(() =>
+    vendorCategoryFilter === "All" ? vendors : vendors.filter((v) => v.category === vendorCategoryFilter),
+    [vendors, vendorCategoryFilter]
+  );
+
+  const selectableFiltered = filteredVendors.filter((v) => !v.blacklisted);
+  const allFilteredSelected = selectableFiltered.length > 0 && selectableFiltered.every((v) => eligible.includes(v.id));
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setEligible((p) => p.filter((id) => !selectableFiltered.find((v) => v.id === id)));
+    } else {
+      setEligible((p) => Array.from(new Set([...p, ...selectableFiltered.map((v) => v.id)])));
+    }
+  };
 
   const toggleVendor = (id: string) => setEligible((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
@@ -209,8 +229,31 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
 
           <div className="md:col-span-2">
             <Label className="text-xs">Eligible Vendors * <span className="font-normal text-muted-foreground">({eligible.length} selected)</span></Label>
+            <div className="mb-2 flex items-center gap-2">
+              <Select value={vendorCategoryFilter} onValueChange={setVendorCategoryFilter} disabled={!!locked}>
+                <SelectTrigger className="h-8 w-48 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {vendorCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                disabled={!!locked || selectableFiltered.length === 0}
+                onClick={toggleSelectAll}
+              >
+                {allFilteredSelected ? "Deselect All" : "Select All"}
+                {vendorCategoryFilter !== "All" && ` (${vendorCategoryFilter})`}
+              </Button>
+              <span className="text-xs text-muted-foreground">{filteredVendors.length} shown</span>
+            </div>
             <div className="max-h-56 overflow-y-auto rounded-sm border border-border bg-card">
-              {vendors.map((v) => (
+              {filteredVendors.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">No vendors in this category.</p>
+              )}
+              {filteredVendors.map((v) => (
                 <label key={v.id} className={`flex items-center gap-3 border-b border-border/60 px-3 py-2 text-xs last:border-0 hover:bg-secondary/40 ${v.blacklisted ? "opacity-50" : ""}`}>
                   <Checkbox checked={eligible.includes(v.id)} disabled={v.blacklisted || !!locked} onCheckedChange={() => toggleVendor(v.id)} />
                   <div className="flex flex-1 items-center justify-between">

@@ -1,0 +1,204 @@
+================================================================================
+GOVERNMENT OF ANDHRA PRADESH
+e-PROCUREMENT PORTAL
+DIGITAL SIGNATURE CERTIFICATE (DSC) — USER MANUAL
+IT Act 2000 | CCA Guidelines | e-Procurement Policy AP
+================================================================================
+
+Version : 2.1
+Date    : April 2026
+Helpdesk: helpdesk@apeprocurement.gov.in | 1800-3070-2232
+
+================================================================================
+CHAPTER 1 — INTRODUCTION TO DIGITAL SIGNATURE CERTIFICATES
+================================================================================
+
+1.1  WHAT IS A DSC?
+     A Digital Signature Certificate (DSC) is an electronic equivalent of a
+     physical signature. It is issued by a licensed Certifying Authority (CA)
+     under the Information Technology Act, 2000.
+
+     DSCs are MANDATORY for:
+     - Submitting tenders / bids on the AP e-Procurement portal
+     - Signing documents electronically
+     - All officers authorised to approve tenders or issue LoA
+
+1.2  TYPES OF DSC
+     Class 2 : For individuals / proprietors (personal use)
+     Class 3 : For companies / organisations — REQUIRED for e-Tendering
+     DGFT    : For import / export transactions (not applicable here)
+
+     NOTE: Only Class 3 DSC is accepted on the AP e-Procurement portal.
+
+1.3  VALIDITY
+     DSCs are issued for 1 year or 2 years. Renew at least 30 days before expiry.
+
+================================================================================
+CHAPTER 2 — OBTAINING A DSC
+================================================================================
+
+2.1  LICENSED CERTIFYING AUTHORITIES (CA) IN INDIA
+     - (n)Code Solutions (GNFC)  : www.ncodesolutions.com
+     - eMudhra                   : www.emudhra.com
+     - Sify Technologies         : www.sifytechnologies.com
+     - IDRBT                     : www.idrbt.ac.in
+     - NSDL e-Gov                : www.egov-nsdl.co.in
+
+2.2  DOCUMENTS REQUIRED FOR DSC ISSUANCE
+     Individual / Officer:
+     [ ] Application form (from CA's website)
+     [ ] Passport-size photograph
+     [ ] PAN Card (self-attested)
+     [ ] Aadhaar Card / Passport / Voter ID (self-attested)
+     [ ] Official email ID for OTP verification
+
+     Organisation / Company:
+     [ ] All of the above for authorised representative
+     [ ] Company / Organisation Registration Certificate
+     [ ] Board Resolution authorising the representative
+     [ ] GST Registration Certificate
+     [ ] Letter from organisation on letterhead
+
+2.3  PROCESS
+     Step 1 : Visit the CA's website and fill the online application form
+     Step 2 : Upload self-attested documents
+     Step 3 : Pay the fee (approx. ₹800–₹2,000 depending on CA and validity)
+     Step 4 : Video verification / KYC (if required by CA)
+     Step 5 : CA verifies documents and issues DSC on a USB token (e-token)
+     Step 6 : Install the driver software for the e-token on your computer
+
+================================================================================
+CHAPTER 3 — INSTALLING DSC ON YOUR COMPUTER
+================================================================================
+
+3.1  SYSTEM REQUIREMENTS
+     - Operating System : Windows 7 / 8 / 10 / 11 (64-bit recommended)
+     - Browser          : Google Chrome (latest) or Mozilla Firefox (latest)
+     - Java             : JRE 8 or above (for legacy portals only)
+     - USB Port         : Available USB 2.0 / 3.0 port
+
+3.2  DRIVER INSTALLATION
+     Step 1 : Insert the e-token (USB dongle) into your computer
+     Step 2 : Download the appropriate driver from your CA's website
+              - For Aladdin / SafeNet token : Install SafeNet client
+              - For ePass2003 token         : Install ePass2003 driver
+              - For WatchKey token          : Install WatchKey driver
+     Step 3 : Run the installer as Administrator
+     Step 4 : Restart your computer after installation
+     Step 5 : Insert the e-token — the token light should blink
+
+3.3  VERIFYING INSTALLATION
+     Step 1 : Open Windows Control Panel
+     Step 2 : Go to Internet Options → Content → Certificates
+     Step 3 : Your DSC should appear under "Personal" tab
+     Step 4 : Alternatively, open the token management software and
+              verify the certificate is listed
+
+3.4  BROWSER CONFIGURATION (Chrome)
+     Step 1 : Open Chrome → Settings → Privacy & Security → Security
+     Step 2 : Scroll to "Manage certificates"
+     Step 3 : Confirm your certificate appears under "Personal"
+     Step 4 : Install the "TenderTiger DSC Helper" or portal-specific
+              browser extension if prompted by the e-procurement portal
+
+================================================================================
+CHAPTER 4 — USING DSC ON AP e-PROCUREMENT PORTAL
+================================================================================
+
+4.1  LOGGING IN WITH DSC
+     Step 1 : Navigate to http://YOUR_SERVER_IP:8080
+     Step 2 : Click "Login with DSC" on the login page
+     Step 3 : Ensure your e-token is plugged in
+     Step 4 : Select your certificate from the popup list
+     Step 5 : Enter your e-token PIN when prompted
+     Step 6 : You are now logged in with digital signature
+
+4.2  SIGNING A DOCUMENT / BID
+     Step 1 : Navigate to the relevant tender and click "Submit Bid"
+     Step 2 : Upload all required documents
+     Step 3 : Click "Sign & Submit"
+     Step 4 : Select your DSC from the certificate picker
+     Step 5 : Enter your e-token PIN
+     Step 6 : The system digitally signs the submission — a confirmation
+              number is generated. Save this for your records.
+
+4.3  SIGNING A LETTER OF AWARD (FOR OFFICERS)
+     Step 1 : Go to Tenders → Select Tender → Award
+     Step 2 : Select the winning vendor
+     Step 3 : Click "Issue LoA" — the system generates the LoA document
+     Step 4 : Click "Sign with DSC" and enter your PIN
+     Step 5 : Signed LoA is stored in the portal and sent to the vendor
+
+================================================================================
+CHAPTER 5 — TROUBLESHOOTING
+================================================================================
+
+Problem : e-Token not detected by browser
+Solution:
+  1. Remove and re-insert the token
+  2. Try a different USB port
+  3. Reinstall the token driver
+  4. Restart the browser after inserting the token
+  5. Ensure the browser extension / helper app is running
+
+Problem : Wrong PIN — token locked
+Solution:
+  1. Contact your CA to unlock the token (admin PIN required)
+  2. Most tokens allow 5–10 wrong attempts before locking
+  3. Do NOT guess the PIN repeatedly
+
+Problem : Certificate expired
+Solution:
+  1. Renew the DSC from your CA at least 30 days before expiry
+  2. After renewal, re-register the new certificate on the portal
+
+Problem : Signature validation fails on portal
+Solution:
+  1. Ensure system date/time is correct (sync with internet time)
+  2. Ensure the certificate chain (root CA) is trusted in your browser
+  3. Download and install the CA's root certificate from their website
+  4. Contact helpdesk if problem persists
+
+Problem : Java not found / plugin disabled
+Solution:
+  1. Download JRE from https://java.com/en/download/
+  2. Enable Java in browser: chrome://settings → Advanced → Privacy →
+     Content Settings → Plugins → Allow (for legacy portals only)
+
+================================================================================
+CHAPTER 6 — SECURITY GUIDELINES
+================================================================================
+
+6.1  PROTECT YOUR e-TOKEN
+     - Never share your PIN with anyone, including IT staff
+     - Remove the token when not in use
+     - Store the token in a safe, dry place
+     - Report loss of token immediately to your CA and departmental IT
+
+6.2  PROTECT YOUR PRIVATE KEY
+     - The private key is stored inside the token hardware — it cannot be
+       extracted. Never allow software to "export" your private key.
+     - Any bid / document signed with your DSC is legally binding on you.
+
+6.3  REVOCATION
+     - If your token is lost or compromised, contact your CA immediately
+       to revoke the certificate
+     - A revoked certificate cannot be used to sign documents
+
+================================================================================
+CONTACT & SUPPORT
+================================================================================
+
+AP e-Procurement Help Desk:
+  Phone   : 1800-3070-2232 (Toll Free, Mon–Sat 9 AM–6 PM)
+  Email   : helpdesk@apeprocurement.gov.in
+  Address : AP Secretariat, Velagapudi, Amaravati, Andhra Pradesh
+
+DSC-related queries:
+  Contact your respective Certifying Authority (CA)
+  CCA India (Controller of Certifying Authorities): www.cca.gov.in
+
+================================================================================
+Government of Andhra Pradesh · e-Procurement Portal · Version 4.2.1
+IT Act 2000 | CCA Guidelines | AP e-Procurement Policy
+================================================================================
