@@ -4,12 +4,218 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Search, Users, Mail, Phone, Building2, ShieldCheck, AlertTriangle, CheckCircle, XCircle, Sparkles, Fingerprint, FileSearch, Briefcase, FileCheck } from "lucide-react";
+import { Search, Users, Mail, Phone, Building2, ShieldCheck, AlertTriangle, CheckCircle, XCircle, Sparkles, Fingerprint, FileSearch, Briefcase, FileCheck, Star, MapPin, IndianRupee, Calendar, Hash, AlertOctagon, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAdmin, fmtDate, type PendingVendor } from "@/store/admin-store";
+import { useAdmin, fmtDate, type PendingVendor, type Vendor } from "@/store/admin-store";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/useT";
+import { getVendorDetail, type CompletedProject } from "@/data/vendorDetails";
+
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <span className="inline-flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} className={`h-3 w-3 ${i <= rating ? "fill-accent text-accent" : "text-border"}`} />
+      ))}
+    </span>
+  );
+}
+
+function fmtINR(n: number) {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+}
+
+function VendorDetailDialog({ vendor, open, onClose }: { vendor: Vendor | null; open: boolean; onClose: () => void }) {
+  if (!vendor) return null;
+  const detail = getVendorDetail(vendor);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-primary/10">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base">{vendor.companyName}</DialogTitle>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground">{vendor.id}</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">{vendor.category}</span>
+              </div>
+            </div>
+            {vendor.blacklisted ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-sm bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive ring-1 ring-inset ring-destructive/30">
+                <AlertTriangle className="h-3 w-3" /> Blacklisted
+              </span>
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-sm bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success ring-1 ring-inset ring-success/30">
+                <ShieldCheck className="h-3 w-3" /> Active
+              </span>
+            )}
+          </div>
+        </DialogHeader>
+
+        <Tabs defaultValue="profile" className="mt-2">
+          <TabsList className="h-8 w-full rounded-sm">
+            <TabsTrigger value="profile" className="flex-1 text-xs">Profile</TabsTrigger>
+            <TabsTrigger value="projects" className="flex-1 text-xs">
+              Projects ({detail.completedProjects.length})
+            </TabsTrigger>
+            {vendor.blacklisted && (
+              <TabsTrigger value="blacklist" className="flex-1 text-xs text-destructive">
+                Blacklist Info
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* ── PROFILE ── */}
+          <TabsContent value="profile" className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: Hash,        label: "Vendor ID",       value: vendor.id },
+                { icon: Building2,   label: "Category",        value: vendor.category },
+                { icon: Users,       label: "Contact Person",  value: vendor.contactPerson },
+                { icon: Phone,       label: "Phone",           value: vendor.phone },
+                { icon: Mail,        label: "Email",           value: vendor.email },
+                { icon: MapPin,      label: "Location",        value: `${detail.city}, ${detail.state}` },
+                { icon: Calendar,    label: "Registered On",   value: fmtDate(vendor.registeredOn) },
+                { icon: Users,       label: "Employees",       value: `~${detail.employees}` },
+                { icon: IndianRupee, label: "Annual Turnover", value: `₹${detail.turnoverLakhs.toFixed(1)} L` },
+                { icon: Briefcase,   label: "Years Active",    value: `${detail.yearsActive} years` },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-2.5 rounded-sm border border-border/60 bg-secondary/20 px-3 py-2.5">
+                  <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+                    <p className="mt-0.5 truncate text-sm font-medium text-foreground">{value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-start gap-2.5 rounded-sm border border-border/60 bg-secondary/20 px-3 py-2.5">
+                <FileCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">GST Number</p>
+                  <p className="mt-0.5 font-mono text-sm font-medium text-foreground">{vendor.gst || "—"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 rounded-sm border border-border/60 bg-secondary/20 px-3 py-2.5">
+                <FileCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">PAN Number</p>
+                  <p className="mt-0.5 font-mono text-sm font-medium text-foreground">{vendor.pan || "—"}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-sm border border-border/60 bg-secondary/20 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Performance Score</p>
+              <div className="mt-2 flex items-center gap-3">
+                <Progress value={vendor.pastPerformance} className="h-2 flex-1" />
+                <span className="text-sm font-bold text-primary">{vendor.pastPerformance}/100</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{vendor.completedTenders} tender{vendor.completedTenders !== 1 ? "s" : ""} completed</p>
+            </div>
+          </TabsContent>
+
+          {/* ── PROJECTS ── */}
+          <TabsContent value="projects" className="mt-3">
+            {detail.completedProjects.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
+                <ClipboardList className="h-8 w-8 opacity-30" />
+                <p className="text-sm">No completed projects on record.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {detail.completedProjects.map((p: CompletedProject) => (
+                  <div key={p.id} className="rounded-sm border border-border/60 bg-secondary/10 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground">{p.name}</p>
+                        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{p.tenderRef}</p>
+                      </div>
+                      <StarRating rating={p.rating} />
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <div><span className="font-semibold text-foreground/70">Dept.</span> {p.department}</div>
+                      <div><span className="font-semibold text-foreground/70">Value</span> {fmtINR(p.value)}</div>
+                      <div><span className="font-semibold text-foreground/70">Completed</span> {new Date(p.completedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                    </div>
+                    <p className="mt-2 text-xs italic text-muted-foreground">"{p.remarks}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── BLACKLIST ── */}
+          {vendor.blacklisted && (
+            <TabsContent value="blacklist" className="mt-3">
+              {detail.blacklistEntry ? (
+                <div className="space-y-3">
+                  <div className="rounded-sm border border-destructive/40 bg-destructive/5 p-4">
+                    <p className="mb-3 flex items-center gap-2 text-sm font-bold text-destructive">
+                      <AlertOctagon className="h-4 w-4" /> Debarment / Blacklist Order
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">Order No.</p>
+                        <p className="font-mono font-medium">{detail.blacklistEntry.orderNo}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">Date of Order</p>
+                        <p className="font-medium">{detail.blacklistEntry.date}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">Issuing Authority</p>
+                        <p className="font-medium">{detail.blacklistEntry.authority}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">Duration</p>
+                        <p className={`font-semibold ${detail.blacklistEntry.duration === "Permanent" ? "text-destructive" : "text-warning"}`}>
+                          {detail.blacklistEntry.duration}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">Reason</p>
+                        <p className="font-medium text-destructive">{detail.blacklistEntry.reason}</p>
+                      </div>
+                      {detail.blacklistEntry.relatedTender && (
+                        <div className="col-span-2">
+                          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Related Tender</p>
+                          <p className="font-mono font-medium">{detail.blacklistEntry.relatedTender}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-sm border border-border/60 bg-secondary/10 p-3">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Detailed Description</p>
+                    <p className="text-sm leading-relaxed text-foreground/80">{detail.blacklistEntry.description}</p>
+                  </div>
+
+                  <div className="rounded-sm border border-warning/30 bg-warning/5 p-3 text-xs text-warning">
+                    <p className="font-semibold">Notice to Tendering Officers</p>
+                    <p className="mt-0.5 text-muted-foreground">This vendor is debarred from participating in any Government of Andhra Pradesh procurement until the order is explicitly vacated by the competent authority.</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">Blacklist details not available.</p>
+              )}
+            </TabsContent>
+          )}
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function Vendors() {
   const { vendors, pendingVendors, approveVendor, rejectVendor, tenders } = useAdmin();
@@ -18,6 +224,7 @@ export default function Vendors() {
   const [tab, setTab] = useState<"approved" | "pending">("approved");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [selectedPr, setSelectedPr] = useState<PendingVendor | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   const openAiReport = (pr: PendingVendor) => {
     setSelectedPr(pr);
@@ -101,7 +308,7 @@ export default function Vendors() {
             </TableHeader>
             <TableBody>
               {rows.map((v) => (
-                <TableRow key={v.id} className="border-border/60">
+                <TableRow key={v.id} className="cursor-pointer border-border/60 transition-colors hover:bg-accent/5" onClick={() => setSelectedVendor(v)}>
                   <TableCell className="pl-4 font-mono text-xs">{v.id}</TableCell>
                   <TableCell>
                     <p className="flex items-center gap-1.5 font-medium text-foreground"><Building2 className="h-3 w-3 text-primary" /> {v.companyName}</p>
@@ -302,6 +509,12 @@ export default function Vendors() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <VendorDetailDialog
+        vendor={selectedVendor}
+        open={!!selectedVendor}
+        onClose={() => setSelectedVendor(null)}
+      />
     </AdminLayout>
   );
 }
