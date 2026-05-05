@@ -354,25 +354,59 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
   // ── vendor mutations ───────────────────────────────────────────────────────
   const approveVendor = useCallback((id: string) => {
-    setPendingVendors(prev => prev.filter(v => v.id !== id));
-    apiClient.patch(`/vendors/${id}/approve`)
-      .then(() => { fetchVendors(); fetchPending(); })
-      .catch(() => {});
-
     const pr = pendingVendors.find(v => v.id === id);
-    if (pr) {
-      pushNotification({
-        title: "Vendor Approved",
-        body: `${pr.company} has been approved and added to the directory.`,
-        type: "info", audience: "Admin", targetRole: "admin", channels: ["in_app"],
+    setPendingVendors(prev => prev.filter(v => v.id !== id));
+
+    apiClient.patch(`/vendors/${id}/approve`)
+      .then(() => {
+        fetchVendors();
+        fetchPending();
+        if (pr) {
+          pushNotification({
+            title: "Vendor Approved",
+            body: `${pr.company} (${pr.email}) has been approved and added to the vendor directory. An approval email has been sent.`,
+            type: "info", audience: "Admin", targetRole: "admin", channels: ["in_app", "email"],
+          });
+          toast.success(`${pr.company} approved`, {
+            description: "Vendor account activated. Approval email sent to vendor.",
+          });
+        }
+      })
+      .catch((err) => {
+        if (pr) setPendingVendors(prev => [pr, ...prev]);
+        toast.error("Failed to approve vendor", {
+          description: err?.response?.data?.detail ?? "Server error. Please try again.",
+        });
+        fetchPending();
       });
-    }
   }, [pendingVendors, pushNotification, fetchVendors, fetchPending]);
 
   const rejectVendor = useCallback((id: string) => {
+    const pr = pendingVendors.find(v => v.id === id);
     setPendingVendors(prev => prev.filter(v => v.id !== id));
-    apiClient.patch(`/vendors/${id}/reject`).then(() => fetchPending()).catch(() => {});
-  }, [fetchPending]);
+
+    apiClient.patch(`/vendors/${id}/reject`)
+      .then(() => {
+        fetchPending();
+        if (pr) {
+          pushNotification({
+            title: "Vendor Registration Rejected",
+            body: `${pr.company} (${pr.email}) registration has been rejected. A notification email has been sent to the vendor.`,
+            type: "info", audience: "Admin", targetRole: "admin", channels: ["in_app"],
+          });
+          toast.success(`${pr.company} rejected`, {
+            description: "Rejection email sent to vendor.",
+          });
+        }
+      })
+      .catch((err) => {
+        if (pr) setPendingVendors(prev => [pr, ...prev]);
+        toast.error("Failed to reject vendor", {
+          description: err?.response?.data?.detail ?? "Server error. Please try again.",
+        });
+        fetchPending();
+      });
+  }, [pendingVendors, pushNotification, fetchPending]);
 
   const addPendingVendor = useCallback((v: Omit<PendingVendor, "status" | "submittedOn">) => {
     const newPr: PendingVendor = {

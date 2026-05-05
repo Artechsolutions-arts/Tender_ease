@@ -867,3 +867,134 @@ def send_new_vendor_registration_notification(admin_emails: list[str], vendor: d
 
     for adm_email in admin_emails:
         _fire(adm_email, subject, _wrap(inner))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 7. VENDOR APPROVED — Registration Approved
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def send_vendor_approval_notification(email: str, company: str, contact: str, vendor_id: str):
+    portal_url = f"{FRONTEND_URL}/login"
+    subject = f"[AP Tender] Registration Approved — {company}"
+
+    inner = f"""
+    {_gov_header()}
+    <tr>
+      <td style="background:linear-gradient(135deg,#0a3d1f 0%,#146c37 50%,#16a34a 100%);
+                  padding:22px 32px;text-align:center;">
+        <p style="margin:0;font-size:30px;line-height:1;">&#9989;</p>
+        <p style="margin:8px 0 0;font-size:17px;font-weight:700;color:#ffffff;">
+          Registration Approved
+        </p>
+        <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.85);
+                   letter-spacing:0.8px;text-transform:uppercase;">
+          AP Tender e-Procurement Portal &nbsp;&middot;&nbsp; Vendor ID: {vendor_id}
+        </p>
+      </td>
+    </tr>
+    {_colour_header("Vendor Registration", "APPROVED",
+                     f"Welcome to AP e-Procurement — {company}",
+                     f"Vendor ID: {vendor_id} &nbsp;&middot;&nbsp; Approved On: {_today()}",
+                     "#0a3d1f", "#146c37")}
+    {_spacer(24)}
+    {_salutation(company)}
+    {_subject_line(f"Approval of Vendor Registration &mdash; {company} &mdash; Vendor ID: {vendor_id}")}
+    {_para(f"""
+      We are pleased to inform you that the registration application submitted by
+      <strong>{company}</strong> has been reviewed and <strong>formally approved</strong>
+      by the Competent Authority. Your organisation is now an active registered vendor
+      on the AP Tender e-Procurement Portal and is eligible to bid on tenders floated
+      by the Government of Andhra Pradesh.
+    """)}
+    {_spacer(18)}
+    {_detail_table([
+        ("Company Name",   f"<strong>{company}</strong>"),
+        ("Contact Person", contact),
+        ("Vendor ID",      f"<strong style='color:#0a3d1f;font-size:14px;'>{vendor_id}</strong>"),
+        ("Approved On",    f"<strong>{_today()}</strong>"),
+        ("Portal Access",  "Full — Tender View, Download, Bid Submission"),
+        ("Status",         "<span style='color:#16a34a;font-weight:700;'>ACTIVE &amp; VERIFIED</span>"),
+    ])}
+    {_alert("&#x2714;", "You're All Set",
+            "Log in using your registered email and password to access the vendor dashboard, "
+            "browse open tenders, and submit bids.",
+            "success")}
+    {_spacer(18)}
+    <tr>
+      <td style="padding:18px 32px 0;font-size:13px;font-weight:700;color:#0f2744;
+                  font-family:'Segoe UI',Arial,sans-serif;">Next Steps</td>
+    </tr>
+    {_steps([
+        "Log in to the AP Tender Portal using your registered email and password.",
+        "Complete your Full Vendor Profile — upload GST, PAN, and company documents.",
+        "Browse open tenders under <em>My Tenders</em> to view eligible tenders.",
+        "Download NIT documents, prepare your bid, and submit before the deadline.",
+    ])}
+    {_cta_button("Login to Vendor Dashboard", portal_url, "#0a3d1f")}
+    {_spacer(8)}
+    {_para(f"We welcome <strong>{company}</strong> to the AP Tender e-Procurement ecosystem.")}
+    {_signature("e-Procurement Cell")}
+    """
+
+    _fire(email, subject, _wrap(inner))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 8. VENDOR REJECTED — Registration Rejected
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def send_vendor_rejection_notification(email: str, company: str, contact: str):
+    portal_url = f"{FRONTEND_URL}/vendor-signup"
+    subject = f"[AP Tender] Registration Update — {company}"
+
+    inner = f"""
+    {_gov_header()}
+    {_colour_header("Vendor Registration", "DECISION COMMUNICATED",
+                     f"Registration Application Update — {company}",
+                     f"Date: {_today()}",
+                     "#4a3000", "#7a5100")}
+    {_spacer(24)}
+    {_salutation(company)}
+    {_subject_line(f"Update on Vendor Registration Application &mdash; {company}")}
+    {_para(f"""
+      We refer to the vendor registration application submitted by
+      <strong>{company}</strong> on the AP Tender e-Procurement Portal.
+      After due consideration by the Competent Authority, we regret to inform you
+      that your application could <strong>not be approved</strong> at this time,
+      in accordance with the AP e-Procurement Vendor Empanelment Policy.
+    """)}
+    {_spacer(18)}
+    {_detail_table([
+        ("Company Name",   f"<strong>{company}</strong>"),
+        ("Contact Person", contact),
+        ("Decision Date",  f"<strong>{_today()}</strong>"),
+        ("Status",         "<span style='color:#b45309;font-weight:700;'>NOT APPROVED</span>"),
+    ])}
+    {_alert("&#x1F4CB;", "What Happens Next",
+            "You may review the eligibility criteria on the AP Tender Portal and re-apply "
+            "once any identified gaps have been addressed. Reapplications with complete "
+            "and accurate documentation are considered afresh.",
+            "neutral")}
+    {_spacer(18)}
+    <tr>
+      <td style="padding:18px 32px 0;font-size:13px;font-weight:700;color:#0f2744;
+                  font-family:'Segoe UI',Arial,sans-serif;">Steps to Re-Apply</td>
+    </tr>
+    {_steps([
+        "Review the vendor empanelment eligibility criteria on the AP Tender Portal.",
+        "Ensure all mandatory documents (GST, PAN, Registration Certificate) are valid and current.",
+        "Submit a fresh registration application with complete and accurate documentation.",
+        "Contact the Help Desk for clarification on eligibility requirements if needed.",
+    ])}
+    {_alert("&#x2139;", "Right to Seek Information (RTI Act 2005)",
+            "You have the right to seek information under the RTI Act, 2005. A written "
+            "application may be submitted to the PIO of the e-Procurement Cell within "
+            "<strong>30 days</strong> of this communication.",
+            "info")}
+    {_cta_button("Re-Apply on the Portal", portal_url, "#7a5100")}
+    {_spacer(8)}
+    {_para(f"We appreciate the interest shown by <strong>{company}</strong> and encourage you to reapply.")}
+    {_signature("e-Procurement Cell")}
+    """
+
+    _fire(email, subject, _wrap(inner))

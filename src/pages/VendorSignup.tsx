@@ -350,8 +350,8 @@ export default function VendorSignup() {
                     <Input id="confirmPassword" type="password" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="businessType">Business Type <span className="text-destructive">*</span></Label>
-                    <Select required>
+                    <Label htmlFor="businessType">Business Type</Label>
+                    <Select>
                       <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="proprietorship">Proprietorship</SelectItem>
@@ -363,8 +363,8 @@ export default function VendorSignup() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">State <span className="text-destructive">*</span></Label>
-                    <Select required>
+                    <Label htmlFor="state">State</Label>
+                    <Select>
                       <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ap">Andhra Pradesh</SelectItem>

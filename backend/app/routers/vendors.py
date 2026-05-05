@@ -1,8 +1,14 @@
+import uuid
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Vendor, PendingVendor, User
 from app.core.deps import get_current_user, require_admin
+from app.services.email_service import (
+    send_vendor_approval_notification,
+    send_vendor_rejection_notification,
+)
 
 router = APIRouter()
 
@@ -108,9 +114,37 @@ def approve_vendor(vendor_id: str, current_user: User = Depends(require_admin), 
     pv = db.query(PendingVendor).filter(PendingVendor.id == vendor_id).first()
     if not pv:
         raise HTTPException(status_code=404, detail="Pending vendor not found")
+
+    # Create a Vendor record in the vendors table
+    new_vendor_id = f"VEN-{datetime.now(timezone.utc).year}-{str(uuid.uuid4())[:6].upper()}"
+    vendor = Vendor(
+        id=new_vendor_id,
+        company_name=pv.company,
+        contact_person=pv.contact,
+        email=pv.email,
+        phone=pv.phone,
+        category="General",
+        gst="",
+        pan="",
+    )
+    db.add(vendor)
+    db.flush()
+
+    # Mark PendingVendor as approved
     pv.status = "Approved"
+
+    # Update the linked User account
+    user = db.query(User).filter(User.email == pv.email).first()
+    if user:
+        user.is_verified = True
+        user.vendor_id = new_vendor_id
+
     db.commit()
-    return _pending_dict(pv)
+
+    # Notify vendor by email (non-blocking)
+    send_vendor_approval_notification(pv.email, pv.company, pv.contact, new_vendor_id)
+
+    return {**_pending_dict(pv), "vendorId": new_vendor_id}
 
 
 @router.patch("/{vendor_id}/reject")
@@ -120,4 +154,8 @@ def reject_vendor(vendor_id: str, body: dict = None, current_user: User = Depend
         raise HTTPException(status_code=404, detail="Pending vendor not found")
     pv.status = "Rejected"
     db.commit()
+
+    # Notify vendor by email (non-blocking)
+    send_vendor_rejection_notification(pv.email, pv.company, pv.contact)
+
     return _pending_dict(pv)
