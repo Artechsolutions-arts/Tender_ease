@@ -222,6 +222,7 @@ export default function Vendors() {
   const T = useT();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"approved" | "pending">("approved");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blacklisted">("all");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [selectedPr, setSelectedPr] = useState<PendingVendor | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
@@ -231,10 +232,19 @@ export default function Vendors() {
     setIsAiOpen(true);
   };
 
+  const toggleStatFilter = (next: "active" | "blacklisted") => {
+    setStatusFilter((prev) => (prev === next ? "all" : next));
+    setTab("approved");
+  };
+
   const rows = useMemo(() => {
     const q = query.toLowerCase();
-    return vendors.filter((v) => !q || v.companyName.toLowerCase().includes(q) || v.id.toLowerCase().includes(q) || v.category.toLowerCase().includes(q));
-  }, [vendors, query]);
+    return vendors.filter((v) => {
+      const matchQ = !q || v.companyName.toLowerCase().includes(q) || v.id.toLowerCase().includes(q) || v.category.toLowerCase().includes(q);
+      const matchS = statusFilter === "all" || (statusFilter === "active" ? !v.blacklisted : v.blacklisted);
+      return matchQ && matchS;
+    });
+  }, [vendors, query, statusFilter]);
 
   const tendersFor = (vid: string) => tenders.filter((t) => t.eligibleVendorIds.includes(vid)).length;
 
@@ -244,21 +254,34 @@ export default function Vendors() {
       breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("common_officer_console"), to: "/" }, { label: T("nav_vendors") }]}
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <Card className="rounded-sm border-l-4 border-l-primary p-3">
+        <Card
+          onClick={() => { setStatusFilter("all"); setTab("approved"); }}
+          className={`cursor-pointer rounded-sm border-l-4 border-l-primary p-3 transition-colors hover:bg-primary/5 ${statusFilter === "all" ? "ring-2 ring-primary/30 bg-primary/5" : ""}`}
+        >
           <p className="text-[10px] font-semibold uppercase text-muted-foreground">{T("vendors_total")}</p>
           <p className="text-2xl font-bold text-primary">{vendors.length}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Click to show all</p>
         </Card>
-        <Card className="rounded-sm border-l-4 border-l-success p-3">
+        <Card
+          onClick={() => toggleStatFilter("active")}
+          className={`cursor-pointer rounded-sm border-l-4 border-l-success p-3 transition-colors hover:bg-success/5 ${statusFilter === "active" ? "ring-2 ring-success/30 bg-success/5" : ""}`}
+        >
           <p className="text-[10px] font-semibold uppercase text-muted-foreground">{T("vendors_active")}</p>
           <p className="text-2xl font-bold text-success">{vendors.filter((v) => !v.blacklisted).length}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">{statusFilter === "active" ? "✓ Filtered" : "Click to filter"}</p>
         </Card>
-        <Card className="rounded-sm border-l-4 border-l-destructive p-3">
+        <Card
+          onClick={() => toggleStatFilter("blacklisted")}
+          className={`cursor-pointer rounded-sm border-l-4 border-l-destructive p-3 transition-colors hover:bg-destructive/5 ${statusFilter === "blacklisted" ? "ring-2 ring-destructive/30 bg-destructive/5" : ""}`}
+        >
           <p className="text-[10px] font-semibold uppercase text-muted-foreground">{T("vendors_blacklisted")}</p>
           <p className="text-2xl font-bold text-destructive">{vendors.filter((v) => v.blacklisted).length}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">{statusFilter === "blacklisted" ? "✓ Filtered" : "Click to filter"}</p>
         </Card>
         <Card className="rounded-sm border-l-4 border-l-accent p-3">
           <p className="text-[10px] font-semibold uppercase text-muted-foreground">{T("vendors_avg_performance")}</p>
           <p className="text-2xl font-bold text-accent">{vendors.length ? Math.round(vendors.reduce((s, v) => s + v.pastPerformance, 0) / vendors.length) : 0}</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">Avg. across all vendors</p>
         </Card>
       </div>
 
