@@ -42,6 +42,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]           = useState("");
   const [loading, setLoading]       = useState(false);
+  const [activeTab, setActiveTab]   = useState(0);
 
   useEffect(() => {
     document.title = "Login — AP e-Procurement Portal";
@@ -62,6 +63,8 @@ export default function Login() {
         return;
       }
       navigate(user.role === "vendor" ? "/vendor-dashboard" : "/", { replace: true });
+    } catch {
+      setError(T("login_invalid"));
     } finally {
       setLoading(false);
     }
@@ -194,8 +197,9 @@ export default function Login() {
                 {["Current Tenders", "Corrigendums", "Upcoming Tenders"].map((tab, i) => (
                   <button
                     key={tab}
+                    onClick={() => setActiveTab(i)}
                     className={`flex-1 py-2.5 text-[12px] font-semibold transition-colors ${
-                      i === 0
+                      i === activeTab
                         ? "border-b-2 border-primary bg-primary/5 text-primary"
                         : "text-muted-foreground hover:text-primary"
                     }`}
