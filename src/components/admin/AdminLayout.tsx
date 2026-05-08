@@ -196,12 +196,12 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
         {/* Invisible h1 for screen readers — image carries the visual title */}
         <h1 className="sr-only">{t(lang, "govt_ap_full")}</h1>
 
-        {/* Banner image — 100% width, height auto → never crops */}
+        {/* Banner image — fixed header height, object-fit:cover keeps it compact */}
         <img
           src="/header-bg.png"
           alt="AP e-Procurement Portal — Government of Andhra Pradesh"
           className="block w-full"
-          style={{ height: "auto", display: "block" }}
+          style={{ height: 155, objectFit: "cover", objectPosition: "left top" }}
         />
 
         {/* Dark scrim on the right third so the user card is readable */}
@@ -214,8 +214,8 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
           }}
         />
 
-        {/* User card + actions — anchored to bottom-right of the image */}
-        <div className="absolute bottom-4 right-4 z-10 hidden items-center gap-3 md:flex md:right-8">
+        {/* User card + actions — anchored to bottom-right */}
+        <div className="absolute bottom-3 right-4 z-10 hidden items-center gap-3 md:flex md:right-8">
           <div
             className="rounded px-3 py-2 text-right"
             style={{
