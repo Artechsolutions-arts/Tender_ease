@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
@@ -105,12 +105,36 @@ def _user_dict(user: User) -> dict:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+_MAX_FAILED_ATTEMPTS = 5
+_LOCKOUT_MINUTES = 15
+
+
 @router.post("/login")
 def login(request: Request, response: Response, body: LoginRequest, db: Session = Depends(get_db)):
     ip = get_ip(request)
     user = db.query(User).filter(User.email == body.email).first()
 
+    # Brute-force lockout check
+    if user and user.locked_until:
+        if user.locked_until.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc):
+            remaining = int((user.locked_until.replace(tzinfo=timezone.utc) - datetime.now(timezone.utc)).total_seconds() // 60) + 1
+            audit_log(db, Action.LOGIN_FAILED, "User", body.email,
+                      details={"reason": "account_locked", "email": body.email}, ip_address=ip)
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account temporarily locked. Try again in {remaining} minute(s).",
+            )
+        else:
+            user.locked_until = None
+            user.failed_login_attempts = 0
+
     if not user or not verify_password(body.password, user.password_hash):
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= _MAX_FAILED_ATTEMPTS:
+                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=_LOCKOUT_MINUTES)
+                user.failed_login_attempts = 0
         audit_log(db, Action.LOGIN_FAILED, "User", body.email,
                   details={"email": body.email}, ip_address=ip)
         db.commit()
@@ -118,6 +142,9 @@ def login(request: Request, response: Response, body: LoginRequest, db: Session 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
 
     access_token = create_access_token(user.id, user.email, user.role.value, user.vendor_id)
     raw_refresh = create_refresh_token()

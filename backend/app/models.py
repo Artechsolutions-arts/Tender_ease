@@ -99,6 +99,8 @@ class User(Base):
     vendor_id = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
     verification_step = Column(SAEnum(VerificationStepEnum), nullable=True, default=VerificationStepEnum.STEP_1)
+    failed_login_attempts = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_now)
     updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 

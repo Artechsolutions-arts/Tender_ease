@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
-import { apiClient } from "@/lib/api";
+import { apiClient, saveTokens, clearTokens } from "@/lib/api";
 
 export type UserRole = "admin" | "vendor";
 
@@ -31,8 +31,9 @@ function mapApiRole(role: string): UserRole {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<DemoUser | null>(() => {
     localStorage.removeItem("demoAccounts");
+    localStorage.removeItem("currentUser");
     try {
-      const saved = localStorage.getItem("currentUser");
+      const saved = sessionStorage.getItem("currentUser");
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -41,18 +42,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      sessionStorage.setItem("currentUser", JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
     }
   }, [currentUser]);
 
   const login = useCallback(async (email: string, password: string): Promise<DemoUser | null> => {
     const res = await apiClient.post<{ accessToken: string; refreshToken: string; user: any }>("/auth/login", { email, password });
     const { accessToken, refreshToken, user } = res.data;
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-    localStorage.setItem("lastLoginAt", new Date().toISOString());
+    saveTokens(accessToken, refreshToken);
+    sessionStorage.setItem("lastLoginAt", new Date().toISOString());
     const mapped: DemoUser = {
       email: user.email,
       name: user.name,
@@ -67,12 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshToken = sessionStorage.getItem("refreshToken");
     if (refreshToken) {
       apiClient.post("/auth/logout", { refreshToken }).catch(() => {});
     }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearTokens();
     setCurrentUser(null);
   }, []);
 
@@ -85,8 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: account.password,
     });
     const { accessToken, refreshToken, user } = res.data;
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
+    saveTokens(accessToken, refreshToken);
     setCurrentUser({
       email: user.email,
       name: user.name,
