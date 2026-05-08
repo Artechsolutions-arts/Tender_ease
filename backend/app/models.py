@@ -3,7 +3,7 @@ import enum
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime,
-    ForeignKey, Text, JSON, Enum as SAEnum, UniqueConstraint,
+    ForeignKey, Text, JSON, Enum as SAEnum, UniqueConstraint, CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -52,9 +52,11 @@ class VerificationStepEnum(str, enum.Enum):
 class DocTypeEnum(str, enum.Enum):
     GST_CERTIFICATE = "GST_CERTIFICATE"
     PAN_CARD = "PAN_CARD"
+    AADHAAR_CARD = "AADHAAR_CARD"
     COMPANY_REGISTRATION = "COMPANY_REGISTRATION"
     EXPERIENCE_CERTIFICATE = "EXPERIENCE_CERTIFICATE"
     FINANCIAL_STATEMENT = "FINANCIAL_STATEMENT"
+    BANK_STATEMENT = "BANK_STATEMENT"
     BANK_GUARANTEE = "BANK_GUARANTEE"
     BID_DOCUMENT = "BID_DOCUMENT"
     TENDER_DOCUMENT = "TENDER_DOCUMENT"
@@ -120,6 +122,10 @@ class RefreshToken(Base):
 
 class Tender(Base):
     __tablename__ = "tenders"
+    __table_args__ = (
+        CheckConstraint("estimated_value > 0", name="ck_tender_value_positive"),
+        CheckConstraint("end_date > start_date",  name="ck_tender_dates_valid"),
+    )
 
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
@@ -132,6 +138,10 @@ class Tender(Base):
     status = Column(SAEnum(TenderStatusEnum), nullable=False, default=TenderStatusEnum.Draft, index=True)
     awarded_vendor_id = Column(String, nullable=True)
     created_by = Column(String, nullable=False)
+    # Soft-delete — record preserved for audit trail even after "deletion"
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=_now)
     updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 
@@ -140,6 +150,7 @@ class Tender(Base):
     history = relationship("TenderHistory", back_populates="tender", cascade="all, delete-orphan")
     bids = relationship("Bid", back_populates="tender")
     ai_validations = relationship("AiValidation", back_populates="tender", cascade="all, delete-orphan")
+    addenda = relationship("TenderAddendum", back_populates="tender", cascade="all, delete-orphan")
 
 
 class TenderDocument(Base):
@@ -212,7 +223,10 @@ class PendingVendor(Base):
 
 class Bid(Base):
     __tablename__ = "bids"
-    __table_args__ = (UniqueConstraint("tender_id", "vendor_id"),)
+    __table_args__ = (
+        UniqueConstraint("tender_id", "vendor_id"),
+        CheckConstraint("amount > 0", name="ck_bid_amount_positive"),
+    )
 
     id = Column(String, primary_key=True, default=_uuid)
     tender_id = Column(String, ForeignKey("tenders.id"), nullable=False, index=True)
@@ -308,6 +322,8 @@ class DocumentValidation(Base):
     ai_findings = Column(JSON, nullable=False)
     ai_summary = Column(Text, nullable=False)
     ai_flagged = Column(Boolean, default=False)
+    ai_extracted_fields = Column(JSON, nullable=True)
+    ai_detected_type = Column(String, nullable=True)
     officer_user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     officer_decision = Column(SAEnum(OfficerDecisionEnum), nullable=True)
     officer_remarks = Column(Text, nullable=True)
@@ -318,3 +334,93 @@ class DocumentValidation(Base):
 
     document = relationship("VendorDocument", back_populates="validation")
     officer_user = relationship("User", back_populates="reviewed_docs", foreign_keys=[officer_user_id])
+
+
+# ── GFR 2017 Compliance Models ────────────────────────────────────────────────
+
+class EMDStatusEnum(str, enum.Enum):
+    SUBMITTED  = "SUBMITTED"
+    VERIFIED   = "VERIFIED"
+    REFUNDED   = "REFUNDED"
+    FORFEITED  = "FORFEITED"
+
+
+class EMDSubmission(Base):
+    """Earnest Money Deposit — GFR 2017 Section 6.2.
+    Each bid must be backed by an EMD; tracked here for refund/forfeiture audit.
+    """
+    __tablename__ = "emd_submissions"
+
+    id              = Column(String, primary_key=True, default=_uuid)
+    bid_id          = Column(String, ForeignKey("bids.id", ondelete="CASCADE"), unique=True, nullable=False)
+    tender_id       = Column(String, ForeignKey("tenders.id"), nullable=False, index=True)
+    vendor_id       = Column(String, ForeignKey("vendors.id"), nullable=False, index=True)
+    amount          = Column(Float, nullable=False)
+    bank_name       = Column(String, nullable=False)
+    guarantee_number = Column(String, unique=True, nullable=False)
+    guarantee_date  = Column(DateTime(timezone=True), nullable=False)
+    valid_upto      = Column(DateTime(timezone=True), nullable=False)
+    status          = Column(SAEnum(EMDStatusEnum), default=EMDStatusEnum.SUBMITTED, nullable=False, index=True)
+    refund_date     = Column(DateTime(timezone=True), nullable=True)
+    forfeiture_reason = Column(Text, nullable=True)
+    recorded_by     = Column(String, ForeignKey("users.id"), nullable=False)
+    created_at      = Column(DateTime(timezone=True), default=_now)
+    updated_at      = Column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class TenderAddendum(Base):
+    """Corrigendum / Addendum — GFR 2017 requires all pre-bid amendments to be documented.
+    Each addendum gets an immutable record with amendment number and issuing officer.
+    """
+    __tablename__ = "tender_addenda"
+
+    id               = Column(String, primary_key=True, default=_uuid)
+    tender_id        = Column(String, ForeignKey("tenders.id", ondelete="CASCADE"), nullable=False, index=True)
+    amendment_number = Column(Integer, nullable=False)
+    title            = Column(String, nullable=False)
+    description      = Column(Text, nullable=False)
+    affects_dates    = Column(Boolean, default=False)
+    new_end_date     = Column(DateTime(timezone=True), nullable=True)
+    issued_by        = Column(String, ForeignKey("users.id"), nullable=False)
+    issued_on        = Column(DateTime(timezone=True), default=_now, nullable=False)
+    created_at       = Column(DateTime(timezone=True), default=_now)
+
+    tender    = relationship("Tender", back_populates="addenda")
+    __table_args__ = (UniqueConstraint("tender_id", "amendment_number", name="uq_addendum_number"),)
+
+
+class TECMember(Base):
+    """Tender Evaluation Committee member — GFR 2017 mandates documented TEC for evaluation.
+    Members are named officers with designation; their individual scoring is recorded in BidTechnicalScore.
+    """
+    __tablename__ = "tec_members"
+
+    id           = Column(String, primary_key=True, default=_uuid)
+    tender_id    = Column(String, ForeignKey("tenders.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_name  = Column(String, nullable=False)
+    designation  = Column(String, nullable=False)
+    organization = Column(String, nullable=False)
+    is_chair     = Column(Boolean, default=False)
+    appointed_by = Column(String, ForeignKey("users.id"), nullable=False)
+    appointed_on = Column(DateTime(timezone=True), default=_now)
+    created_at   = Column(DateTime(timezone=True), default=_now)
+
+
+class BidTechnicalScore(Base):
+    """Individual technical evaluation score given by a TEC member for a specific bid.
+    Separate from financial (L1) scoring — enables two-envelope evaluation per GFR 2017.
+    """
+    __tablename__ = "bid_technical_scores"
+
+    id              = Column(String, primary_key=True, default=_uuid)
+    bid_id          = Column(String, ForeignKey("bids.id", ondelete="CASCADE"), nullable=False, index=True)
+    tec_member_id   = Column(String, ForeignKey("tec_members.id"), nullable=False)
+    technical_score = Column(Float, nullable=False)
+    criteria_scores = Column(JSON, nullable=True)  # {criterion: score} breakdown
+    remarks         = Column(Text, nullable=True)
+    scored_at       = Column(DateTime(timezone=True), default=_now)
+    created_at      = Column(DateTime(timezone=True), default=_now)
+    __table_args__  = (
+        UniqueConstraint("bid_id", "tec_member_id", name="uq_tec_bid_score"),
+        CheckConstraint("technical_score >= 0 AND technical_score <= 100", name="ck_tech_score_range"),
+    )

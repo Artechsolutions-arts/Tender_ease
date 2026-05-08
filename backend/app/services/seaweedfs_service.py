@@ -1,5 +1,8 @@
+import logging
 import requests
 from app.core.config import SEAWEEDFS_MASTER_URL, SEAWEEDFS_PUBLIC_URL
+
+logger = logging.getLogger("seaweedfs")
 
 
 def upload_to_seaweed(file_bytes: bytes, filename: str, mime_type: str) -> tuple[str, str]:
@@ -44,5 +47,5 @@ def delete_from_seaweed(fid: str) -> None:
             return
         volume_url = locations[0]["url"]
         requests.delete(f"http://{volume_url}/{fid}", timeout=5)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("SeaweedFS delete failed for fid=%s: %s", fid, exc)

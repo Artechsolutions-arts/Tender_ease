@@ -2,16 +2,18 @@ import os
 import uuid
 import threading
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import VendorDocument, DocumentValidation, Vendor, User, RoleEnum, Notification, NotificationTypeEnum
 from app.models import OcrStatusEnum, ValidationStatusEnum, DocTypeEnum, OfficerDecisionEnum
 from app.core.deps import get_current_user, require_admin
-from app.core.config import UPLOADS_DIR, SEAWEEDFS_ENABLED
+from app.core.config import UPLOADS_DIR, SEAWEEDFS_ENABLED, MAX_UPLOAD_BYTES
+from app.core.magic_check import verify as magic_verify
 from app.services.ocr_service import extract_text, allowed_mime
 from app.services.seaweedfs_service import upload_to_seaweed, delete_from_seaweed
 from app.services.document_ai_service import validate_document
+from app.services.audit_service import log as audit_log, get_ip, Action
 
 router = APIRouter()
 
@@ -57,6 +59,8 @@ def _val_dict(v: DocumentValidation) -> dict:
         "aiFindings": v.ai_findings,
         "aiSummary": v.ai_summary,
         "aiFlagged": v.ai_flagged,
+        "aiExtractedFields": v.ai_extracted_fields or {},
+        "aiDetectedType": v.ai_detected_type,
         "officerUserId": v.officer_user_id,
         "officerUser": {"name": v.officer_user.name, "email": v.officer_user.email} if v.officer_user else None,
         "officerDecision": v.officer_decision.value if v.officer_decision else None,
@@ -101,6 +105,8 @@ def _process_document(doc_id: str):
             ai_findings=result.get("findings", []),
             ai_summary=result.get("summary", ""),
             ai_flagged=result.get("flagged", False),
+            ai_extracted_fields=result.get("extracted_fields") or {},
+            ai_detected_type=result.get("detected_type"),
             status=ValidationStatusEnum.AI_REVIEWED,
         ))
         db.commit()
@@ -133,6 +139,7 @@ def _process_document(doc_id: str):
 
 @router.post("/upload")
 async def upload_document(
+    request: Request,
     file: UploadFile = File(...),
     docType: str = Form("OTHER"),
     vendorId: str = Form(None),
@@ -144,8 +151,18 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Only PDF, PNG, JPG, JPEG, WEBP allowed.")
 
     contents = await file.read()
-    if len(contents) > 10 * 1024 * 1024:
+    if len(contents) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=400, detail="File exceeds 10 MB limit.")
+
+    # Magic bytes validation — reject files whose actual content doesn't match claimed MIME
+    ok, reason = magic_verify(contents, file.content_type or "")
+    if not ok:
+        audit_log(db, Action.DOC_UPLOAD, "Document", "REJECTED",
+                  user_id=current_user.id,
+                  details={"file": file.filename, "claimed_mime": file.content_type, "reason": reason},
+                  ip_address=get_ip(request))
+        db.commit()
+        raise HTTPException(status_code=400, detail=reason)
 
     ext = os.path.splitext(file.filename or "")[1].lower() or ".bin"
     file_name = f"{uuid.uuid4()}{ext}"
@@ -183,6 +200,11 @@ async def upload_document(
         ocr_status=OcrStatusEnum.PENDING,
     )
     db.add(doc)
+    audit_log(db, Action.DOC_UPLOAD, "Document", file_name,
+              user_id=current_user.id,
+              details={"original": file.filename, "mime": file.content_type,
+                       "size_bytes": len(contents), "doc_type": docType, "vendor_id": vendorId},
+              ip_address=get_ip(request))
     db.commit()
     db.refresh(doc)
 
@@ -240,6 +262,7 @@ def retry_document(doc_id: str, current_user: User = Depends(require_admin), db:
 @router.patch("/{doc_id}/review")
 def review_document(
     doc_id: str,
+    request: Request,
     body: dict,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -261,13 +284,17 @@ def review_document(
     val.officer_remarks = body.get("remarks")
     val.officer_reviewed_at = datetime.now(timezone.utc)
     val.status = STATUS_MAP[decision]
+    audit_log(db, Action.DOC_REVIEW, "Document", doc_id,
+              user_id=current_user.id,
+              details={"decision": decision, "remarks": body.get("remarks"), "ai_score": val.ai_score},
+              ip_address=get_ip(request))
     db.commit()
     db.refresh(val)
     return _val_dict(val)
 
 
 @router.delete("/{doc_id}")
-def delete_document(doc_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_document(doc_id: str, request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     doc = db.query(VendorDocument).filter(VendorDocument.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -280,6 +307,10 @@ def delete_document(doc_id: str, current_user: User = Depends(get_current_user),
         pass
     if doc.seaweed_fid:
         delete_from_seaweed(doc.seaweed_fid)
+    audit_log(db, Action.DOC_DELETE, "Document", doc_id,
+              user_id=current_user.id,
+              details={"original_name": doc.original_name, "doc_type": doc.doc_type.value},
+              ip_address=get_ip(request))
     db.delete(doc)
     db.commit()
     return {"message": "Document deleted"}

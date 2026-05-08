@@ -2,12 +2,15 @@
 Email notification service — AP Tender e-Procurement Portal.
 All CSS is fully inlined (Gmail/Outlook safe). Silently skipped if SMTP not configured.
 """
+import logging
 import smtplib
 import threading
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, FRONTEND_URL
+
+logger = logging.getLogger("email")
 
 # AP Government emblem — embedded as base64 so no external URL dependency
 _AP_LOGO_B64 = (
@@ -67,7 +70,7 @@ _AP_LOGO_B64 = (
 
 def send_email(to: str, subject: str, html_body: str) -> bool:
     if not SMTP_HOST or not SMTP_USER:
-        print(f"[Email] SMTP not configured — skipping mail to {to}")
+        logger.info("SMTP not configured — skipping mail to %s", to)
         return False
     try:
         msg = MIMEMultipart("alternative")
@@ -80,10 +83,10 @@ def send_email(to: str, subject: str, html_body: str) -> bool:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
             server.sendmail(SMTP_FROM, to, msg.as_string())
-        print(f"[Email] ✓  '{subject}'  →  {to}")
+        logger.info("Email sent: '%s' → %s", subject, to)
         return True
     except Exception as e:
-        print(f"[Email] ✗  Failed → {to} : {e}")
+        logger.error("Email failed → %s : %s", to, e)
         return False
 
 

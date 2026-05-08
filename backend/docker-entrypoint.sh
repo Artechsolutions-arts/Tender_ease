@@ -12,4 +12,8 @@ echo "→ Checking if seed needed..."
 python seed.py
 
 echo "→ Starting AP e-Procurement API on port 3000..."
-exec uvicorn main:app --host 0.0.0.0 --port 3000 --no-access-log
+exec uvicorn main:app --host 0.0.0.0 --port 3000 \
+  --log-level info \
+  --access-log \
+  --proxy-headers \
+  --forwarded-allow-ips "*"

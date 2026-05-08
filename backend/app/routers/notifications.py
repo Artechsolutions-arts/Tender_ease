@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Notification, User, RoleEnum
 from app.core.deps import get_current_user
+from app.services.audit_service import log as audit_log, get_ip
 
 router = APIRouter()
 
@@ -46,20 +47,37 @@ def unread_count(current_user: User = Depends(get_current_user), db: Session = D
 
 
 @router.patch("/{notif_id}/read")
-def mark_read(notif_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def mark_read(
+    request: Request,
+    notif_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     n = db.query(Notification).filter(Notification.id == notif_id).first()
     if not n:
         raise HTTPException(status_code=404, detail="Notification not found")
     n.read = True
+    audit_log(db, "NOTIFICATION_READ", "Notification", notif_id,
+              user_id=current_user.id, ip_address=get_ip(request))
     db.commit()
     return _notif_dict(n)
 
 
 @router.patch("/read-all")
-def mark_all_read(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    all_notifs = db.query(Notification).filter(Notification.read == False).all()
+def mark_all_read(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    all_notifs = db.query(Notification).filter(Notification.read == False).all()  # noqa: E712
+    count = 0
     for n in all_notifs:
         if _visible(n, current_user):
             n.read = True
+            count += 1
+    audit_log(db, "NOTIFICATION_READ_ALL", "Notification", "bulk",
+              user_id=current_user.id,
+              details={"count": count},
+              ip_address=get_ip(request))
     db.commit()
     return {"message": "All notifications marked as read"}

@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertTriangle, ShieldAlert, Brain, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, ShieldAlert, Brain, RefreshCw, ScanText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -135,6 +135,38 @@ export function ValidationResult({ doc, showRetry = false }: Props) {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">AI Findings</p>
             <div className="divide-y">
               {findings.map((f, i) => <FindingRow key={i} f={f} />)}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Extracted fields */}
+      {v.aiExtractedFields && Object.keys(v.aiExtractedFields).length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ScanText className="h-3.5 w-3.5" />
+              Extracted Fields
+              {v.aiDetectedType && (
+                <span className="ml-1 font-normal normal-case text-blue-600 bg-blue-50 border border-blue-100 rounded px-1.5 py-0.5 text-[10px]">
+                  {v.aiDetectedType}
+                </span>
+              )}
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              {Object.entries(v.aiExtractedFields)
+                .filter(([, val]) => val !== null && val !== "" && val !== undefined)
+                .map(([key, val]) => (
+                  <div key={key} className="min-w-0">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide truncate">
+                      {key.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-xs font-medium text-gray-800 truncate">
+                      {typeof val === "boolean" ? (val ? "Yes" : "No") : String(val)}
+                    </p>
+                  </div>
+                ))}
             </div>
           </div>
         </>

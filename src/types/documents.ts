@@ -1,9 +1,11 @@
 export type DocType =
   | "GST_CERTIFICATE"
   | "PAN_CARD"
+  | "AADHAAR_CARD"
   | "COMPANY_REGISTRATION"
   | "EXPERIENCE_CERTIFICATE"
   | "FINANCIAL_STATEMENT"
+  | "BANK_STATEMENT"
   | "BANK_GUARANTEE"
   | "BID_DOCUMENT"
   | "TENDER_DOCUMENT"
@@ -37,6 +39,8 @@ export interface DocumentValidation {
   aiFindings: DocFinding[];
   aiSummary: string;
   aiFlagged: boolean;
+  aiExtractedFields?: Record<string, string | boolean | null>;
+  aiDetectedType?: string;
   officerUserId?: string;
   officerUser?: { name: string; email: string };
   officerDecision?: OfficerDecision;
@@ -78,9 +82,11 @@ export interface DocumentsResponse {
 export const DOC_TYPE_LABELS: Record<DocType, string> = {
   GST_CERTIFICATE: "GST Certificate",
   PAN_CARD: "PAN Card",
+  AADHAAR_CARD: "Aadhaar Card",
   COMPANY_REGISTRATION: "Company Registration",
   EXPERIENCE_CERTIFICATE: "Experience Certificate",
   FINANCIAL_STATEMENT: "Financial Statement",
+  BANK_STATEMENT: "Bank Statement",
   BANK_GUARANTEE: "Bank Guarantee",
   BID_DOCUMENT: "Bid Document",
   TENDER_DOCUMENT: "Tender Document",
