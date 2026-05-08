@@ -190,69 +190,36 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
         </div>
       </div>
 
-      {/* Masthead — Amaravati gradient */}
+      {/* Masthead — custom banner image */}
       <header
         className="relative overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, #0c1e3c 0%, #0f2f6e 45%, #1565c0 100%)",
-          minHeight: 150,
+          backgroundImage: "url('/header-bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "left top",
+          backgroundRepeat: "no-repeat",
+          minHeight: 220,
         }}
       >
-        {/* Faint diagonal light sweep */}
+        {/* Invisible h1 for accessibility — image carries the visual title */}
+        <h1 className="sr-only">{t(lang, "govt_ap_full")}</h1>
+
+        {/* Dark scrim on the right so the user card stays readable */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-y-0 right-0"
           style={{
+            width: "38%",
             background:
-              "radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.07) 0%, transparent 65%)",
+              "linear-gradient(to left, rgba(6,18,40,0.72) 0%, transparent 100%)",
           }}
         />
 
-        {/* AP emblem watermark — right side */}
+        {/* Main content row — spacer left, controls right */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 select-none opacity-[0.08]"
-          style={{ width: 160, height: 160 }}
+          className="relative z-10 flex items-end justify-end gap-3 px-4 py-5 md:px-8"
+          style={{ minHeight: 220 }}
         >
-          <img src="/ap-govt-logo.png" alt="" className="h-full w-full object-contain" />
-        </div>
-
-        {/* Main content row */}
-        <div
-          className="relative z-10 flex items-center justify-between gap-5 px-4 py-5 md:px-8"
-          style={{ minHeight: 150 }}
-        >
-          {/* Left — emblem + titles */}
-          <div className="flex items-center gap-5">
-            <div
-              className="flex shrink-0 items-center justify-center rounded-full p-1.5 shadow-lg"
-              style={{
-                width: 90,
-                height: 90,
-                background: "rgba(255,255,255,0.12)",
-                border: "2px solid rgba(255,255,255,0.25)",
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              <img
-                src="/ap-govt-logo.png"
-                alt="Government of Andhra Pradesh emblem"
-                className="h-full w-full object-contain drop-shadow-md"
-              />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[2px] text-white/55">
-                {t(lang, "satyameva")}
-              </p>
-              <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm md:text-[28px]">
-                {t(lang, "govt_ap_full")}
-              </h1>
-              <p className="mt-1 text-sm font-semibold" style={{ color: "#fbbf24" }}>
-                {t(lang, "portal_tagline")}
-              </p>
-            </div>
-          </div>
-
           {/* Right — user card + actions */}
           <div className="hidden items-center gap-3 md:flex">
             <div
