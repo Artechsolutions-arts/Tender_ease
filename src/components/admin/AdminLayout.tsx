@@ -190,35 +190,99 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
         </div>
       </div>
 
-      {/* Masthead */}
-      <header className="border-b-4 border-accent bg-white" style={{ minHeight: 150 }}>
-        <div className="flex items-center justify-between gap-5 px-4 py-5 md:px-8" style={{ minHeight: 150 }}>
+      {/* Masthead — Amaravati gradient */}
+      <header
+        className="relative overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #0c1e3c 0%, #0f2f6e 45%, #1565c0 100%)",
+          minHeight: 150,
+        }}
+      >
+        {/* Faint diagonal light sweep */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.07) 0%, transparent 65%)",
+          }}
+        />
+
+        {/* AP emblem watermark — right side */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 select-none opacity-[0.08]"
+          style={{ width: 160, height: 160 }}
+        >
+          <img src="/ap-govt-logo.png" alt="" className="h-full w-full object-contain" />
+        </div>
+
+        {/* Main content row */}
+        <div
+          className="relative z-10 flex items-center justify-between gap-5 px-4 py-5 md:px-8"
+          style={{ minHeight: 150 }}
+        >
+          {/* Left — emblem + titles */}
           <div className="flex items-center gap-5">
-            <div className="flex shrink-0 items-center justify-center rounded-full bg-secondary/40 p-1.5 shadow-sm" style={{ width: 90, height: 90 }}>
+            <div
+              className="flex shrink-0 items-center justify-center rounded-full p-1.5 shadow-lg"
+              style={{
+                width: 90,
+                height: 90,
+                background: "rgba(255,255,255,0.12)",
+                border: "2px solid rgba(255,255,255,0.25)",
+                backdropFilter: "blur(4px)",
+              }}
+            >
               <img
                 src="/ap-govt-logo.png"
                 alt="Government of Andhra Pradesh emblem"
-                className="h-full w-full object-contain"
+                className="h-full w-full object-contain drop-shadow-md"
               />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t(lang, "satyameva")}</p>
-              <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-primary md:text-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[2px] text-white/55">
+                {t(lang, "satyameva")}
+              </p>
+              <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white drop-shadow-sm md:text-[28px]">
                 {t(lang, "govt_ap_full")}
               </h1>
-              <p className="mt-1 text-sm font-semibold text-accent">{t(lang, "portal_tagline")}</p>
+              <p className="mt-1 text-sm font-semibold" style={{ color: "#fbbf24" }}>
+                {t(lang, "portal_tagline")}
+              </p>
             </div>
           </div>
+
+          {/* Right — user card + actions */}
           <div className="hidden items-center gap-3 md:flex">
-            <div className="rounded border border-border bg-secondary/40 px-3 py-2 text-right">
-              <p className="text-xs uppercase text-muted-foreground">{t(lang, "logged_in_as")}</p>
-              <p className="text-sm font-semibold text-primary">{currentUser?.name ?? "Guest User"}</p>
-              <p className="text-xs text-muted-foreground">{currentUser?.organization ?? "AP e-Procurement"}</p>
+            <div
+              className="rounded px-3 py-2 text-right"
+              style={{
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <p className="text-[11px] uppercase tracking-wide text-white/55">
+                {t(lang, "logged_in_as")}
+              </p>
+              <p className="text-sm font-semibold text-white">
+                {currentUser?.name ?? "Guest User"}
+              </p>
+              <p className="text-[11px] text-white/55">
+                {currentUser?.organization ?? "AP e-Procurement"}
+              </p>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-primary hover:bg-secondary" aria-label={t(lang, "notifications")}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-white/10"
+                  style={{ color: "rgba(255,255,255,0.85)" }}
+                  aria-label={t(lang, "notifications")}
+                >
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
@@ -255,11 +319,28 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" className="text-primary hover:bg-secondary" aria-label={t(lang, "logout")} onClick={() => setShowLogoutConfirm(true)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-white/10"
+              style={{ color: "rgba(255,255,255,0.85)" }}
+              aria-label={t(lang, "logout")}
+              onClick={() => setShowLogoutConfirm(true)}
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
+
+        {/* Kalamkari-inspired accent stripe at the bottom of the header */}
+        <div
+          aria-hidden="true"
+          style={{
+            height: 5,
+            background:
+              "repeating-linear-gradient(90deg, #f59e0b 0px, #f59e0b 24px, #ffffff 24px, #ffffff 28px, #1565c0 28px, #1565c0 52px, #ffffff 52px, #ffffff 56px, #b91c1c 56px, #b91c1c 80px, #ffffff 80px, #ffffff 84px, #f59e0b 84px)",
+          }}
+        />
       </header>
 
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
