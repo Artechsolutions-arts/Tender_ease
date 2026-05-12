@@ -166,7 +166,11 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
 
   const submit = () => {
     if (!name.trim()) return toast.error("Tender name is required");
+    if (description.trim().length < 20) return toast.error("Description too short", { description: "Enter at least 20 characters describing the scope of work." });
+    if (!startDate) return toast.error("Start date is required");
     if (!endDate) return toast.error("End date is required");
+    if (new Date(endDate) <= new Date(startDate)) return toast.error("End date must be after start date");
+    if (!estimatedValue || Number(estimatedValue) <= 0) return toast.error("Estimated value is required", { description: "Enter a value greater than ₹0." });
     if (eligible.length === 0) return toast.error("Select at least one eligible vendor");
     if (requiredDocs.length === 0) return toast.error("Specify at least one required document for bidders");
 
@@ -174,7 +178,7 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
       name: name.trim(),
       description: description.trim(),
       startDate, endDate,
-      estimatedValue: Number(estimatedValue) || 0,
+      estimatedValue: Number(estimatedValue),
       category, department,
       documents: docs,
       eligibleVendorIds: eligible,

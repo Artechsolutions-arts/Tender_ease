@@ -401,7 +401,7 @@ export default function Login() {
                           ? [`₹${v.toLocaleString("en-IN")}`, "Est. Value"]
                           : [v.toLocaleString("en-IN"), "Tenders"]
                       }
-                      contentStyle={{ fontSize: 11, padding: "4px 8px" }}
+                      contentStyle={{ fontSize: 11, padding: "4px 8px", background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 6 }}
                     />
                     <Bar dataKey={chartMode} radius={[3, 3, 0, 0]}>
                       {(chartData.length ? chartData : CHART_DATA).map((_, i) => (

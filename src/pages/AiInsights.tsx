@@ -186,10 +186,10 @@ export default function AiInsights() {
   };
 
   const INVESTIGATE_ROUTES: Record<string, string> = {
-    "AN-01": "/bid-evaluation",
-    "AN-02": "/tenders",
+    "AN-01": `/bid-evaluation?tender=${tenders[0]?.id ?? ""}`,
+    "AN-02": `/tenders?q=${tenders[1]?.id ?? ""}`,
     "AN-03": "/vendors",
-    "AN-04": "/bid-evaluation",
+    "AN-04": `/bid-evaluation?tender=${tenders[2]?.id ?? ""}`,
   };
 
   const forecasts = [
@@ -584,8 +584,8 @@ export default function AiInsights() {
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="outline" size="sm" className="h-8 rounded-sm text-xs" onClick={() => setSelectedAnomaly(null)}>Dismiss</Button>
                 <Button size="sm" className="h-8 gap-1 rounded-sm bg-accent text-xs text-accent-foreground hover:bg-accent/90"
-                  onClick={() => { setSelectedAnomaly(null); navigate(INVESTIGATE_ROUTES[selectedAnomaly.id] ?? "/compliance"); }}>
-                  <ArrowRight className="h-3.5 w-3.5" /> Go to {INVESTIGATE_ROUTES[selectedAnomaly.id] === "/vendors" ? "Vendors" : INVESTIGATE_ROUTES[selectedAnomaly.id] === "/tenders" ? "Tenders" : "Bid Evaluation"}
+                  onClick={() => { const route = INVESTIGATE_ROUTES[selectedAnomaly.id] ?? "/compliance"; setSelectedAnomaly(null); navigate(route); }}>
+                  <ArrowRight className="h-3.5 w-3.5" /> Investigate{selectedAnomaly.id === "AN-03" ? " in Vendors" : selectedAnomaly.id === "AN-02" ? " in Tenders" : " in Bid Evaluation"}
                 </Button>
               </div>
             </div>

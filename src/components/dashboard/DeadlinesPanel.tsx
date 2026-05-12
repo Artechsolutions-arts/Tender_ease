@@ -1,14 +1,16 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenders } from "@/data/tenders";
 import { CalendarClock } from "lucide-react";
 
 function daysUntil(date: string) {
   const d = new Date(date).getTime();
-  const now = new Date("2026-04-23").getTime();
+  const now = new Date().getTime();
   return Math.ceil((d - now) / (1000 * 60 * 60 * 24));
 }
 
 export function DeadlinesPanel() {
+  const navigate = useNavigate();
   const upcoming = [...tenders]
     .filter((t) => t.status === "Open" || t.status === "Under Review")
     .sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline))
@@ -30,7 +32,8 @@ export function DeadlinesPanel() {
           return (
             <div
               key={t.id}
-              className="group flex items-center justify-between rounded-lg border border-border/50 bg-background/40 p-3 transition hover:border-accent/40 hover:bg-accent/5"
+              className="group flex cursor-pointer items-center justify-between rounded-lg border border-border/50 bg-background/40 p-3 transition hover:border-accent/40 hover:bg-accent/5"
+              onClick={() => navigate(`/tenders?q=${encodeURIComponent(t.title)}`)}
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{t.title}</p>

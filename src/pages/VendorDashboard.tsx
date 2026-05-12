@@ -734,7 +734,7 @@ export default function VendorDashboard() {
                               const blobUrl = URL.createObjectURL(blob);
                               const a = document.createElement("a");
                               a.href = blobUrl;
-                              a.download = doc.name;
+                              a.download = doc.name.replace(/\.[^.]+$/, ".txt");
                               document.body.appendChild(a);
                               a.click();
                               document.body.removeChild(a);
@@ -1000,14 +1000,22 @@ export default function VendorDashboard() {
                           No eligible tenders found for your vendor category.
                         </TableCell>
                       </TableRow>
-                    ) : eligibleTenders.filter((t) => !tenderStatusFilter || t.status === tenderStatusFilter).length === 0 ? (
+                    ) : eligibleTenders.filter((t) => {
+                        if (!tenderStatusFilter) return true;
+                        if (tenderStatusFilter === "Awarded") return t.status === "Awarded" && t.awardedVendorId === vendorId;
+                        return t.status === tenderStatusFilter;
+                      }).length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                           No {tenderStatusFilter?.toLowerCase()} tenders found.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      eligibleTenders.filter((t) => !tenderStatusFilter || t.status === tenderStatusFilter).map((t) => (
+                      eligibleTenders.filter((t) => {
+                        if (!tenderStatusFilter) return true;
+                        if (tenderStatusFilter === "Awarded") return t.status === "Awarded" && t.awardedVendorId === vendorId;
+                        return t.status === tenderStatusFilter;
+                      }).map((t) => (
                         <TableRow
                           key={t.id}
                           className="border-border/60 cursor-pointer hover:bg-secondary/40 transition-colors"
@@ -1168,6 +1176,7 @@ export default function VendorDashboard() {
                         const rating = v ? RATING_CONFIG[v.aiRating] : null;
                         const statusCfg = v ? STATUS_CONFIG[v.status] : null;
                         const isProcessing = doc.ocrStatus === "PROCESSING" || doc.ocrStatus === "PENDING";
+                        const isFailed = doc.ocrStatus === "FAILED";
                         return (
                           <tr key={doc.id} className="hover:bg-secondary/40 transition-colors cursor-pointer" onClick={() => setSelectedApiDoc(doc)}>
                             <td className="px-4 py-3">
@@ -1185,6 +1194,10 @@ export default function VendorDashboard() {
                                 <span className="flex items-center gap-1 text-xs text-info">
                                   <Brain className="h-3 w-3 animate-pulse" /> OCR running…
                                 </span>
+                              ) : isFailed ? (
+                                <span className="flex items-center gap-1 text-xs text-destructive">
+                                  <XCircle className="h-3 w-3" /> OCR Failed
+                                </span>
                               ) : (
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Clock className="h-3 w-3" /> Queued
@@ -1192,8 +1205,8 @@ export default function VendorDashboard() {
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`text-xs font-semibold ${statusCfg?.color ?? "text-muted-foreground"}`}>
-                                {statusCfg?.label ?? "Processing"}
+                              <span className={`text-xs font-semibold ${isFailed ? "text-destructive" : statusCfg?.color ?? "text-muted-foreground"}`}>
+                                {isFailed ? "OCR Failed" : statusCfg?.label ?? "Processing"}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{new Date(doc.createdAt).toLocaleDateString("en-IN")}</td>

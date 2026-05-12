@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Bell, Mail, CheckCheck, FileText, Award, Edit3, Inbox } from "lucide-react";
 import { useAdmin, fmtDateTime, type AppNotification } from "@/store/admin-store";
 import { useAuth } from "@/store/auth-store";
@@ -27,7 +29,9 @@ export default function Notifications() {
   const { notifications, emails, markAllRead, markRead } = useAdmin();
   const { currentUser } = useAuth();
   const T = useT();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"in_app" | "email">("in_app");
+  const [selectedNotif, setSelectedNotif] = useState<AppNotification | null>(null);
   const visibleNotifications = notifications.filter((n) => {
     if (!currentUser) return false;
     if (n.targetRole && n.targetRole !== "all" && n.targetRole !== currentUser.role) return false;
@@ -74,11 +78,16 @@ export default function Notifications() {
             {tab === "email" ? "▶ Viewing Email Log" : "→ View Email Log"}
           </p>
         </button>
-        <div className="rounded-sm border border-border border-l-4 border-l-success bg-card p-3 shadow-sm">
+        <button
+          type="button"
+          onClick={() => navigate("/compliance")}
+          className="rounded-sm border border-border border-l-4 border-l-success bg-card p-3 shadow-sm text-left transition-all hover:shadow-md hover:bg-success/5 group"
+        >
           <p className="text-xs font-semibold uppercase text-muted-foreground">{T("notif_triggers")}</p>
           <p className="text-2xl font-bold text-success">4</p>
           <p className="text-xs text-muted-foreground">{T("notif_trigger_events")}</p>
-        </div>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground group-hover:text-success">→ View Compliance</p>
+        </button>
       </div>
 
       <Card className="mt-4 rounded-sm border-border">
@@ -111,7 +120,7 @@ export default function Notifications() {
                 <div
                   key={n.id}
                   className={`flex cursor-pointer items-start gap-3 border-l-4 px-4 py-3 hover:bg-secondary/30 ${TONE[n.type]} ${n.read ? "opacity-70" : ""}`}
-                  onClick={() => markRead(n.id)}
+                  onClick={() => { markRead(n.id); setSelectedNotif(n); }}
                 >
                   <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <div className="flex-1">
@@ -160,6 +169,60 @@ export default function Notifications() {
           </div>
         )}
       </Card>
+
+      {/* Notification detail dialog */}
+      <Dialog open={!!selectedNotif} onOpenChange={(o) => !o && setSelectedNotif(null)}>
+        <DialogContent className="max-w-md">
+          {selectedNotif && (() => {
+            const Icon = ICON[selectedNotif.type];
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-sm">
+                    <Icon className="h-4 w-4" /> {selectedNotif.title}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 text-sm">
+                  <p className="text-foreground/90 leading-relaxed">{selectedNotif.body}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-sm border border-border bg-secondary/30 px-3 py-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Type</p>
+                      <p className="mt-0.5 font-semibold capitalize">{selectedNotif.type.replace(/_/g, " ")}</p>
+                    </div>
+                    <div className="rounded-sm border border-border bg-secondary/30 px-3 py-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Audience</p>
+                      <p className="mt-0.5 font-semibold">{selectedNotif.audience}</p>
+                    </div>
+                    <div className="rounded-sm border border-border bg-secondary/30 px-3 py-2 col-span-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Timestamp</p>
+                      <p className="mt-0.5 font-semibold">{fmtDateTime(selectedNotif.createdAt)}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <span className="rounded-sm bg-secondary px-2 py-1 text-xs text-muted-foreground">
+                      {selectedNotif.read ? "Read" : "Unread"}
+                    </span>
+                    {selectedNotif.channels.map((c) => (
+                      <span key={c} className="rounded-sm bg-secondary px-2 py-1 text-xs text-muted-foreground">
+                        {c === "in_app" ? "In-App" : "Email"}
+                      </span>
+                    ))}
+                  </div>
+                  {selectedNotif.relatedTenderId && (
+                    <Button
+                      size="sm"
+                      className="w-full gap-2 rounded-sm bg-accent text-xs text-accent-foreground hover:bg-accent/90"
+                      onClick={() => { setSelectedNotif(null); navigate(`/tenders?q=${selectedNotif.relatedTenderId}`); }}
+                    >
+                      View Tender {selectedNotif.relatedTenderId}
+                    </Button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
     </AdminLayout>
   );

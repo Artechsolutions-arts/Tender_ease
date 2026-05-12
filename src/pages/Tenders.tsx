@@ -80,7 +80,7 @@ export default function Tenders() {
       breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("common_officer_console"), to: "/" }, { label: T("nav_tenders") }]}
       actions={isAdmin ? (
         <>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-sm" onClick={refreshTenders}>
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-sm" onClick={() => { refreshTenders(); toast.info("Refreshing tenders…"); }}>
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </Button>
           <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setCreateOpen(true)}>
@@ -220,7 +220,7 @@ export default function Tenders() {
                             const blobUrl = URL.createObjectURL(blob);
                             const a = document.createElement("a");
                             a.href = blobUrl;
-                            a.download = d.name;
+                            a.download = d.name.replace(/\.[^.]+$/, ".txt");
                             document.body.appendChild(a);
                             a.click();
                             document.body.removeChild(a);

@@ -16,6 +16,7 @@ export function DocumentPreview({ doc }: Props) {
   const url = doc.publicUrl ?? getUploadUrl(doc.fileName);
   const isImage = doc.mimeType.startsWith("image/");
   const isPdf = doc.mimeType === "application/pdf";
+  const isText = doc.mimeType === "text/plain";
   const unavailable = (isImage && imgError) || (isPdf && pdfError);
 
   return (
@@ -104,6 +105,10 @@ export function DocumentPreview({ doc }: Props) {
             <p className="text-sm font-medium text-gray-600">File unavailable</p>
             <p className="text-xs text-gray-400">This document was deleted or could not be loaded.</p>
           </div>
+        ) : isText && doc.ocrText ? (
+          <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap p-4 text-xs font-mono leading-relaxed text-gray-700">
+            {doc.ocrText}
+          </pre>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-gray-400">
             <FileText className="h-12 w-12 opacity-40" />

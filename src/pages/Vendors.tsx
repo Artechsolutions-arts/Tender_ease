@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,13 @@ function StarRating({ rating }: { rating: number }) {
 
 function fmtINR(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+}
+
+// Format raw UUID pending IDs as PND-XXXXXX for display
+function fmtVendorDisplayId(id: string) {
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRe.test(id)) return `PND-${id.replace(/-/g, "").substring(0, 6).toUpperCase()}`;
+  return id;
 }
 
 const DOC_STATUS_META = {
@@ -665,6 +673,7 @@ function VendorDetailDialog({ vendor, open, onClose }: { vendor: Vendor | null; 
 export default function Vendors() {
   const { vendors, pendingVendors, approveVendor, rejectVendor, tenders, refreshVendors } = useAdmin();
   const T = useT();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"approved" | "pending">("approved");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blacklisted">("all");
@@ -728,10 +737,13 @@ export default function Vendors() {
           <p className="text-2xl font-bold text-destructive">{vendors.filter((v) => v.blacklisted).length}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{statusFilter === "blacklisted" ? "✓ Filtered" : "Click to filter"}</p>
         </Card>
-        <Card className="rounded-sm border-l-4 border-l-accent p-3">
+        <Card
+          onClick={() => navigate("/reports")}
+          className="cursor-pointer rounded-sm border-l-4 border-l-accent p-3 transition-colors hover:bg-accent/5"
+        >
           <p className="text-xs font-semibold uppercase text-muted-foreground">{T("vendors_avg_performance")}</p>
           <p className="text-2xl font-bold text-accent">{vendors.length ? Math.round(vendors.reduce((s, v) => s + v.pastPerformance, 0) / vendors.length) : 0}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Avg. across all vendors</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Click to view reports</p>
         </Card>
       </div>
 
@@ -843,7 +855,7 @@ export default function Vendors() {
                 ) : (
                   pendingVendors.map((pr) => (
                     <TableRow key={pr.id} className="border-border/60">
-                      <TableCell className="pl-4 text-xs">{pr.id}</TableCell>
+                      <TableCell className="pl-4 text-xs font-mono">{fmtVendorDisplayId(pr.id)}</TableCell>
                       <TableCell>
                          <p className="font-bold text-foreground flex items-center gap-1"><Building2 className="h-3 w-3 text-primary" /> {pr.company}</p>
                         <p className="text-xs text-muted-foreground">{pr.contact}</p>

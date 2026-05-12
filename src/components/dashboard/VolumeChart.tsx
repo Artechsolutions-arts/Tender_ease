@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { monthlyVolume } from "@/data/tenders";
 
 export function VolumeChart() {
@@ -21,17 +21,7 @@ export function VolumeChart() {
       </CardHeader>
       <CardContent className="h-[280px] pt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={monthlyVolume} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradPublished" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gradAwarded" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+          <BarChart data={monthlyVolume} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
             <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -44,9 +34,9 @@ export function VolumeChart() {
                 boxShadow: "var(--shadow-md)",
               }}
             />
-            <Area type="monotone" dataKey="published" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#gradPublished)" />
-            <Area type="monotone" dataKey="awarded" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#gradAwarded)" />
-          </AreaChart>
+            <Bar dataKey="published" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="awarded" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

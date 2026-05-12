@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { categoryBreakdown } from "@/data/tenders";
@@ -11,12 +12,13 @@ const COLORS = [
 ];
 
 export function CategoryChart() {
+  const navigate = useNavigate();
   const total = categoryBreakdown.reduce((s, c) => s + c.value, 0);
   return (
     <Card className="border-border/60 shadow-elegant">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">By category</CardTitle>
-        <p className="text-xs text-muted-foreground">Distribution of active tenders</p>
+        <p className="text-xs text-muted-foreground">Click a segment to filter tenders</p>
       </CardHeader>
       <CardContent>
         <div className="relative h-[200px]">
@@ -37,6 +39,8 @@ export function CategoryChart() {
                 outerRadius={84}
                 paddingAngle={2}
                 stroke="none"
+                cursor="pointer"
+                onClick={(data) => navigate(`/tenders?category=${encodeURIComponent(data.name)}`)}
               >
                 {categoryBreakdown.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -51,7 +55,11 @@ export function CategoryChart() {
         </div>
         <ul className="mt-4 space-y-2">
           {categoryBreakdown.map((c, i) => (
-            <li key={c.name} className="flex items-center justify-between text-xs">
+            <li
+              key={c.name}
+              className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-0.5 text-xs transition-colors hover:bg-secondary/50"
+              onClick={() => navigate(`/tenders?category=${encodeURIComponent(c.name)}`)}
+            >
               <span className="flex items-center gap-2 text-foreground/80">
                 <span className="h-2 w-2 rounded-full" style={{ background: COLORS[i] }} />
                 {c.name}

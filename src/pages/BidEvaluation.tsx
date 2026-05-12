@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAdmin, fmtINR, fmtDate } from "@/store/admin-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,8 +63,14 @@ type RankedBid = Bid & { composite: number };
 export default function BidEvaluation() {
   const { tenders, vendors, changeStatus } = useAdmin();
   const T = useT();
+  const [searchParams] = useSearchParams();
   const evaluable = tenders.filter((t) => ["Closed", "Evaluated", "Published"].includes(t.status));
-  const [selectedId, setSelectedId] = useState<string>(evaluable[0]?.id ?? tenders[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(() => searchParams.get("tender") ?? evaluable[0]?.id ?? tenders[0]?.id ?? "");
+
+  useEffect(() => {
+    const param = searchParams.get("tender");
+    if (param && tenders.find((t) => t.id === param)) setSelectedId(param);
+  }, [searchParams, tenders]);
   const [selectedBid, setSelectedBid] = useState<RankedBid | null>(null);
 
   const tender = tenders.find((t) => t.id === selectedId);
@@ -83,11 +90,18 @@ export default function BidEvaluation() {
 
   const handleAward = () => {
     if (!tender || !winner) return;
-    if (tender.status !== "Evaluated") {
+    if (tender.status === "Awarded") return;
+    if (tender.status === "Closed") {
       changeStatus(tender.id, "Evaluated");
+      toast.info("Tender marked as Evaluated. Click Issue LOA again to award.");
+      return;
     }
-    setTimeout(() => changeStatus(tender.id, "Awarded", winner.vendorId), 0);
-    toast.success(`Letter of Award queued for ${vendorOf(winner.vendorId)?.companyName}`);
+    if (tender.status !== "Evaluated") {
+      toast.error("Tender must be Evaluated before issuing an LOA.");
+      return;
+    }
+    changeStatus(tender.id, "Awarded", winner.vendorId);
+    toast.success(`Letter of Award issued to ${vendorOf(winner.vendorId)?.companyName}`);
   };
 
   const handleMarkEvaluated = () => {

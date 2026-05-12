@@ -111,7 +111,7 @@ function mapApiTender(t: any): Tender {
     status: t.status as TenderStatus,
     awardedVendorId: t.awardedVendorId ?? undefined,
     createdAt: t.createdAt ?? "",
-    history: [],
+    history: t.history ?? [],
   };
 }
 

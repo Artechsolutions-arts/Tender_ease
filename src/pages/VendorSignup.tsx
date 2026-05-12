@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function VendorSignup() {
   const navigate = useNavigate();
-  const { registerVendor } = useAuth();
+  const { registerVendor, submitVerification, currentUser } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Form states for progress
@@ -32,6 +32,12 @@ export default function VendorSignup() {
     const phone = fd.get("mobile") as string;
     const email = fd.get("email") as string;
     const password = fd.get("password") as string;
+    const confirmPassword = fd.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -48,10 +54,9 @@ export default function VendorSignup() {
   const handleFullSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setStep(3);
-    }, 1500);
+    submitVerification();
+    setIsSubmitting(false);
+    setStep(3);
   };
 
   return (
@@ -80,7 +85,7 @@ export default function VendorSignup() {
               <CheckCircle2 className="h-16 w-16 text-success" />
               <h2 className="text-2xl font-bold text-primary">Registration Request Submitted</h2>
               <div className="rounded-sm border border-border bg-secondary/50 p-4 w-full max-w-md">
-                <p className="flex justify-between text-sm"><span className="text-muted-foreground">Reference ID:</span><span className="font-bold">VEN-2026-1045</span></p>
+                <p className="flex justify-between text-sm"><span className="text-muted-foreground">Reference ID:</span><span className="font-bold font-mono">{currentUser?.vendorId ? `PND-${currentUser.vendorId.replace(/-/g, "").substring(0, 8).toUpperCase()}` : "—"}</span></p>
                 <p className="flex justify-between text-sm mt-2"><span className="text-muted-foreground">Status:</span><span className="font-bold text-warning">Pending Verification</span></p>
               </div>
               <p className="text-sm text-muted-foreground max-w-md">
@@ -347,7 +352,7 @@ export default function VendorSignup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
-                    <Input id="confirmPassword" type="password" required />
+                    <Input id="confirmPassword" name="confirmPassword" type="password" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessType">Business Type</Label>
@@ -378,7 +383,7 @@ export default function VendorSignup() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="gstpan">GST / PAN (any one initially) <span className="text-destructive">*</span></Label>
-                    <Input id="gstpan" required placeholder="Enter GSTIN or PAN" />
+                    <Input id="gstpan" name="gstpan" required placeholder="Enter GSTIN or PAN" />
                   </div>
                 </div>
 

@@ -7,9 +7,10 @@ export function useDocuments(params?: { vendorId?: string; status?: string; page
     queryKey: ["documents", params],
     queryFn: () =>
       api.get("/documents", { params: { ...params, limit: 20 } }).then((r) => r.data),
-    refetchInterval: (data) => {
-      // Poll while any document is still being processed
-      const hasProcessing = (data as any)?.docs?.some(
+    refetchInterval: (query) => {
+      // TanStack Query v5: refetchInterval receives a Query object, not raw data
+      const data = query.state.data as DocumentsResponse | undefined;
+      const hasProcessing = data?.docs?.some(
         (d: VendorDocument) => d.ocrStatus === "PENDING" || d.ocrStatus === "PROCESSING"
       );
       return hasProcessing ? 4000 : false;
@@ -22,8 +23,8 @@ export function useDocument(id: string) {
     queryKey: ["document", id],
     queryFn: () => api.get(`/documents/${id}`).then((r) => r.data),
     enabled: !!id,
-    refetchInterval: (data) => {
-      const d = data as VendorDocument | undefined;
+    refetchInterval: (query) => {
+      const d = query.state.data as VendorDocument | undefined;
       return d?.ocrStatus === "PENDING" || d?.ocrStatus === "PROCESSING" ? 3000 : false;
     },
   });
