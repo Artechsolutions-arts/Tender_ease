@@ -29,10 +29,10 @@ const NAV: { labelKey: TranslationKey; icon: React.ElementType; to: string; role
   { labelKey: "nav_bid_evaluation",  icon: FileCheck2,      to: "/bid-evaluation",   roles: ["admin"] },
   { labelKey: "nav_awards",          icon: Gavel,           to: "/awards",           roles: ["admin", "vendor"] },
   { labelKey: "nav_ai_insights",     icon: Sparkles,        to: "/ai-insights",      roles: ["admin"] },
-  { labelKey: "nav_reports",         icon: BarChart3,       to: "/reports",          roles: ["admin", "vendor"] },
+  { labelKey: "nav_reports",         icon: BarChart3,       to: "/reports",          roles: ["admin"] },
   { labelKey: "nav_documents",       icon: ScanSearch,      to: "/documents",        roles: ["admin", "vendor"] },
   { labelKey: "nav_notifications",   icon: Bell,            to: "/notifications",    roles: ["admin", "vendor"] },
-  { labelKey: "nav_compliance",      icon: ShieldCheck,     to: "/compliance",       roles: ["admin", "vendor"] },
+  { labelKey: "nav_compliance",      icon: ShieldCheck,     to: "/compliance",       roles: ["admin"] },
   { labelKey: "nav_help",            icon: HelpCircle,      to: "/help",             roles: ["admin", "vendor"] },
   { labelKey: "nav_my_profile",      icon: UserCheck,       to: "/vendor-dashboard?profile=open", roles: ["vendor"] },
 ];

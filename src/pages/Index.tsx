@@ -29,7 +29,7 @@ const Index = () => {
   return (
     <AdminLayout
       title={T("dashboard_title")}
-      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("common_officer_console") }, { label: T("nav_overview") }]}
+      breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_overview") }]}
       actions={
         <Link to="/tenders">
           <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-accent-foreground hover:bg-accent/90">

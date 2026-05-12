@@ -371,8 +371,7 @@ export default function VendorDashboard() {
       title={T("vd_title")}
       breadcrumbs={[
         { label: T("common_home"), to: "/" },
-        { label: T("common_vendor_console") },
-        { label: vendor.companyName },
+        { label: T("nav_overview") },
       ]}
       actions={
         currentUser?.isVerificationPending ? null : (
