@@ -30,6 +30,10 @@ def _image_to_base64(img: Image.Image) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
+# Detects moondream-style garbage: "ids = [1234, 5678, ...]" with no real words
+_GARBAGE_RE = re.compile(r"^\s*ids\s*=\s*\[[\d,\s]+\]\s*$", re.IGNORECASE)
+
+
 def _vision_ocr(b64_image: str) -> str:
     """Send image to Ollama vision model and return extracted text."""
     payload = {
@@ -48,7 +52,13 @@ def _vision_ocr(b64_image: str) -> str:
     resp.raise_for_status()
     data = resp.json()
     # chat API returns message.content; generate API returns response
-    return (data.get("message", {}).get("content") or data.get("response") or "").strip()
+    text = (data.get("message", {}).get("content") or data.get("response") or "").strip()
+    if _GARBAGE_RE.match(text):
+        raise ValueError(
+            f"Vision model '{OLLAMA_VISION_MODEL}' returned raw token IDs instead of text. "
+            "Set OLLAMA_VISION_MODEL=qwen2.5vl:3b in your .env."
+        )
+    return text
 
 
 def extract_text(file_path: str, mime_type: str) -> str:

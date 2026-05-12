@@ -55,7 +55,7 @@ MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024  # 10 MB
 # ── AI / Ollama ───────────────────────────────────────────────────────────────
 OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
-OLLAMA_VISION_MODEL: str = os.getenv("OLLAMA_VISION_MODEL", "moondream")
+OLLAMA_VISION_MODEL: str = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5vl:3b")
 
 # ── SeaweedFS ─────────────────────────────────────────────────────────────────
 SEAWEEDFS_MASTER_URL: str = os.getenv("SEAWEEDFS_MASTER_URL", "http://localhost:9333")
