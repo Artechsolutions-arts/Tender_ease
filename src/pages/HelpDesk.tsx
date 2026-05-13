@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, MapPin, Clock, MessageSquare, Send, Search, Ticket, BookOpen, Video, Download, ChevronRight, HelpCircle, AlertCircle, CheckCircle2, User } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, Send, Search, Ticket, BookOpen, Video, Download, ChevronRight, HelpCircle, AlertCircle, CheckCircle2, User } from "lucide-react";
 import { useT } from "@/lib/useT";
 import { printAsPdf, downloadBlob } from "@/lib/printPdf";
 
@@ -238,11 +238,6 @@ NOTE: This is a template document. Insert actual values before use. Get it vette
     <AdminLayout
       title={T("help_title")}
       breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_help") }]}
-      actions={
-        <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-xs text-accent-foreground hover:bg-accent/90">
-          <MessageSquare className="h-3.5 w-3.5" /> Live Chat
-        </Button>
-      }
     >
       {/* Contact strip */}
       <div className="mb-5 grid gap-3 md:grid-cols-4">

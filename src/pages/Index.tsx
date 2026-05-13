@@ -7,7 +7,7 @@ import { CategoryChart } from "@/components/dashboard/CategoryChart";
 import { TenderTable } from "@/components/dashboard/TenderTable";
 import { DeadlinesPanel } from "@/components/dashboard/DeadlinesPanel";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, TrendingUp, Wallet, Users, Phone, Mail, Calendar, Download, Search } from "lucide-react";
+import { FileText, TrendingUp, Wallet, Users, Phone, Mail, Calendar, Download, Search } from "lucide-react";
 import { useT } from "@/lib/useT";
 
 const Index = () => {
@@ -30,13 +30,6 @@ const Index = () => {
     <AdminLayout
       title={T("dashboard_title")}
       breadcrumbs={[{ label: T("common_home"), to: "/" }, { label: T("nav_overview") }]}
-      actions={
-        <Link to="/tenders">
-          <Button size="sm" className="h-8 gap-1.5 rounded-sm bg-accent text-accent-foreground hover:bg-accent/90">
-            <Plus className="h-3.5 w-3.5" /> {T("dashboard_publish_nit")}
-          </Button>
-        </Link>
-      }
     >
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[240px_1fr]">
         <aside className="space-y-4">
