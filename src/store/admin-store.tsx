@@ -297,12 +297,22 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }));
 
     apiClient.put(`/tenders/${id}`, {
-      ...patch,
+      name: patch.name,
+      description: patch.description,
       startDate: patch.startDate,
       endDate: patch.endDate,
+      estimatedValue: patch.estimatedValue,
+      category: patch.category,
+      department: patch.department,
       eligibleVendorIds: patch.eligibleVendorIds,
+      changeNote: changes,
     }).then(() => fetchTenders()).catch((err) => {
-      toast.error("Failed to update tender", { description: err?.response?.data?.detail ?? "Server error." });
+      const data = err?.response?.data;
+      const detail = data?.detail
+        ?? data?.details?.[0]?.message?.replace(/^Value error,\s*/i, "")
+        ?? data?.error
+        ?? "Server error.";
+      toast.error("Failed to update tender", { description: detail });
       fetchTenders();
     });
   }, [pushNotification, queueEmails, vendorEmails, fetchTenders]);

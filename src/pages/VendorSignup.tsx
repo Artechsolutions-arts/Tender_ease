@@ -2,7 +2,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/store/auth-store";
-import { Building2, CheckCircle2, UserCheck, FileText, ShieldAlert, Factory, Stamp, Landmark, Trash2 } from "lucide-react";
+import { Building2, CheckCircle2, UserCheck, FileText, ShieldAlert, Factory, Stamp, Landmark, Trash2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,10 @@ export default function VendorSignup() {
   const { registerVendor, submitVerification, currentUser } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Form states for progress
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mobileDigits, setMobileDigits] = useState("");
 
   useEffect(() => {
     document.title = "Vendor Registration — AP e-Procurement";
@@ -29,22 +31,33 @@ export default function VendorSignup() {
     const fd = new FormData(e.currentTarget);
     const company = fd.get("companyName") as string;
     const contact = fd.get("contactPerson") as string;
-    const phone = fd.get("mobile") as string;
+    const rawPhone = fd.get("mobile") as string;
     const email = fd.get("email") as string;
     const password = fd.get("password") as string;
     const confirmPassword = fd.get("confirmPassword") as string;
+
+    if (!rawPhone || rawPhone.length !== 10 || !/^[6-9]/.test(rawPhone)) {
+      toast.error("Enter a valid 10-digit Indian mobile number starting with 6–9");
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
     }
 
+    const phone = `+91${rawPhone}`;
+
     setIsSubmitting(true);
     try {
       await registerVendor({ company, contact, phone, email, password });
       setStep(2);
     } catch (err: any) {
-      const msg = err?.response?.data?.detail ?? "Registration failed. Please try again.";
+      const data = err?.response?.data;
+      const msg = data?.detail
+        ?? data?.details?.[0]?.message?.replace(/^Value error,\s*/i, "")
+        ?? data?.error
+        ?? "Registration failed. Please try again.";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -340,7 +353,21 @@ export default function VendorSignup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="mobile">Mobile Number <span className="text-destructive">*</span></Label>
-                    <Input id="mobile" name="mobile" type="tel" required placeholder="10-digit mobile number" />
+                    <div className="flex h-10 overflow-hidden rounded-sm border border-input focus-within:ring-1 focus-within:ring-ring">
+                      <span className="flex items-center px-3 bg-secondary/50 text-sm text-muted-foreground border-r border-input select-none">+91</span>
+                      <input
+                        id="mobile"
+                        name="mobile"
+                        type="tel"
+                        required
+                        value={mobileDigits}
+                        onChange={(e) => setMobileDigits(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        pattern="[6-9][0-9]{9}"
+                        maxLength={10}
+                        placeholder="10-digit number"
+                        className="flex-1 px-3 bg-background text-sm outline-none"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email ID <span className="text-destructive">*</span></Label>
@@ -348,11 +375,34 @@ export default function VendorSignup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
-                    <Input id="password" name="password" type="password" required />
+                    <div className="relative">
+                      <Input id="password" name="password" type={showPassword ? "text" : "password"} required className="pr-10" />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((p) => !p)}
+                        tabIndex={-1}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Min 12 chars · uppercase · lowercase · digit · special character</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
-                    <Input id="confirmPassword" name="confirmPassword" type="password" required />
+                    <div className="relative">
+                      <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="pr-10" />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((p) => !p)}
+                        tabIndex={-1}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessType">Business Type</Label>
