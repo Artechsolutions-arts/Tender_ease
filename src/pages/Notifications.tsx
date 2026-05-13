@@ -34,13 +34,25 @@ export default function Notifications() {
   const [selectedNotif, setSelectedNotif] = useState<AppNotification | null>(null);
   const visibleNotifications = notifications.filter((n) => {
     if (!currentUser) return false;
-    if (n.targetRole && n.targetRole !== "all" && n.targetRole !== currentUser.role) return false;
+    if (n.targetRole && n.targetRole.toLowerCase() !== "all" && n.targetRole.toLowerCase() !== currentUser.role) return false;
     if (currentUser.role === "vendor" && n.targetVendorIds?.length) return n.targetVendorIds.includes(currentUser.vendorId ?? "");
     return true;
   });
-  const visibleEmails = currentUser?.role === "vendor"
+  const baseEmails = currentUser?.role === "vendor"
     ? emails.filter((e) => e.to.toLowerCase() === currentUser.email.toLowerCase())
     : emails;
+  const notifEmails = visibleNotifications
+    .filter((n) => n.channels?.includes("email"))
+    .map((n) => ({
+      id: `eml-${n.id}`,
+      to: currentUser?.email ?? "",
+      subject: n.title,
+      body: n.body,
+      sentAt: n.createdAt,
+      status: "sent" as const,
+    }));
+  const seenEmlIds = new Set(baseEmails.map((e) => e.id));
+  const visibleEmails = [...baseEmails, ...notifEmails.filter((e) => !seenEmlIds.has(e.id))];
   const isVendor = currentUser?.role === "vendor";
 
   return (
@@ -53,7 +65,7 @@ export default function Notifications() {
         </Button>
       }
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => setTab("in_app")}
@@ -77,16 +89,6 @@ export default function Notifications() {
           <p className={`mt-1 text-xs font-semibold uppercase tracking-wide ${tab === "email" ? "text-accent" : "text-muted-foreground group-hover:text-accent"}`}>
             {tab === "email" ? "▶ Viewing Email Log" : "→ View Email Log"}
           </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate("/compliance")}
-          className="rounded-sm border border-border border-l-4 border-l-success bg-card p-3 shadow-sm text-left transition-all hover:shadow-md hover:bg-success/5 group"
-        >
-          <p className="text-xs font-semibold uppercase text-muted-foreground">{T("notif_triggers")}</p>
-          <p className="text-2xl font-bold text-success">4</p>
-          <p className="text-xs text-muted-foreground">{T("notif_trigger_events")}</p>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground group-hover:text-success">→ View Compliance</p>
         </button>
       </div>
 

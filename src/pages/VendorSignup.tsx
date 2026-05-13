@@ -2,7 +2,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/store/auth-store";
-import { Building2, CheckCircle2, UserCheck, FileText, ShieldAlert, Factory, Stamp, Landmark, Trash2, Eye, EyeOff } from "lucide-react";
+import { Building2, CheckCircle2, UserCheck, FileText, ShieldAlert, Factory, Stamp, Landmark, Eye, EyeOff, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,38 @@ export default function VendorSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [mobileDigits, setMobileDigits] = useState("");
+  const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string>("company");
+
+  const SECTIONS = ["company", "financial", "capability", "documents", "signatory"] as const;
+  type SectionKey = typeof SECTIONS[number];
+
+  const canOpen = (key: string) => {
+    const idx = SECTIONS.indexOf(key as SectionKey);
+    if (idx === 0) return true;
+    return savedSections.has(SECTIONS[idx - 1]);
+  };
+
+  const handleAccordionChange = (value: string) => {
+    if (!value) return;
+    if (canOpen(value)) {
+      setOpenSection(value);
+    } else {
+      toast.warning("Please save the current section before proceeding.");
+    }
+  };
+
+  const saveSection = (key: string, label: string) => {
+    setSavingSection(key);
+    setTimeout(() => {
+      setSavedSections((prev) => new Set(prev).add(key));
+      setSavingSection(null);
+      toast.success(`${label} saved successfully`);
+      const idx = SECTIONS.indexOf(key as SectionKey);
+      if (idx < SECTIONS.length - 1) setOpenSection(SECTIONS[idx + 1]);
+    }, 600);
+  };
 
   useEffect(() => {
     document.title = "Vendor Registration — AP e-Procurement";
@@ -152,135 +184,161 @@ export default function VendorSignup() {
               </div>
 
               <form onSubmit={handleFullSubmit} className="space-y-6">
-                <Accordion type="single" collapsible defaultValue="company" className="w-full space-y-4">
-                  
+                <Accordion type="single" value={openSection} onValueChange={handleAccordionChange} className="w-full space-y-4">
+
                   {/* Company Details */}
                   <AccordionItem value="company" className="border rounded-sm bg-card px-4 shadow-sm text-left">
                     <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2 text-primary font-bold">
-                        <Building2 className="h-5 w-5" /> Company Details
+                      <div className="flex items-center gap-2 text-primary font-bold w-full pr-2">
+                        <Building2 className="h-5 w-5 shrink-0" />
+                        <span>Company Details</span>
+                        {savedSections.has("company") && <CheckCircle2 className="h-4 w-4 text-success ml-auto" />}
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-6 space-y-5">
+                    <AccordionContent className="pt-2 pb-4 space-y-5">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Registration Certificate <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Registration Certificate</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2">
-                          <Label>PAN Document <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>PAN Document</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2">
-                          <Label>GST Registration <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>GST Registration</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2">
                           <Label>CIN / LLPIN (if applicable)</Label>
                           <Input placeholder="Enter CIN or LLPIN" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Year Established <span className="text-destructive">*</span></Label>
-                          <Input type="number" required placeholder="YYYY" min="1900" max="2026" />
+                          <Label>Year Established</Label>
+                          <Input type="number" placeholder="YYYY" min="1900" max="2026" />
                         </div>
                       </div>
                       <div className="space-y-4 pt-4 border-t border-border">
                         <h4 className="font-semibold text-sm">Address Details</h4>
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2 md:col-span-2">
-                            <Label>Registered Office Address <span className="text-destructive">*</span></Label>
-                            <Textarea required placeholder="Full registered address" className="min-h-[80px]" />
+                            <Label>Registered Office Address</Label>
+                            <Textarea placeholder="Full registered address" className="min-h-[80px]" />
                           </div>
                           <div className="space-y-2 md:col-span-2">
                             <Label>Branch Office Address</Label>
                             <Textarea placeholder="Full branch address (if any)" className="min-h-[80px]" />
                           </div>
                           <div className="space-y-2">
-                            <Label>District / State <span className="text-destructive">*</span></Label>
-                            <Input required placeholder="District, State" />
+                            <Label>District / State</Label>
+                            <Input placeholder="District, State" />
                           </div>
                           <div className="space-y-2">
-                            <Label>PIN Code <span className="text-destructive">*</span></Label>
-                            <Input required placeholder="6-digit PIN" />
+                            <Label>PIN Code</Label>
+                            <Input placeholder="6-digit PIN" />
                           </div>
                         </div>
+                      </div>
+                      <div className="flex justify-end pt-3 border-t border-border">
+                        <Button type="button" onClick={() => saveSection("company", "Company Details")} disabled={savingSection === "company"} className="rounded-sm min-w-[150px]">
+                          {savingSection === "company" ? "Saving…" : savedSections.has("company") ? "✓ Saved" : "Save & Continue"}
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
                   {/* Financials */}
-                  <AccordionItem value="financial" className="border rounded-sm bg-card px-4 shadow-sm text-left">
-                    <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2 text-primary font-bold">
-                        <Landmark className="h-5 w-5" /> Financial Details
+                  <AccordionItem value="financial" className={`border rounded-sm bg-card px-4 shadow-sm text-left ${!canOpen("financial") ? "opacity-60" : ""}`}>
+                    <AccordionTrigger className="hover:no-underline py-4" disabled={!canOpen("financial")}>
+                      <div className="flex items-center gap-2 text-primary font-bold w-full pr-2">
+                        <Landmark className="h-5 w-5 shrink-0" />
+                        <span>Financial Details</span>
+                        {savedSections.has("financial") && <CheckCircle2 className="h-4 w-4 text-success ml-auto" />}
+                        {!canOpen("financial") && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-6 space-y-4">
+                    <AccordionContent className="pt-2 pb-4 space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Annual Turnover (Last 3 Years avg in INR) <span className="text-destructive">*</span></Label>
-                          <Input type="number" required placeholder="e.g. 5000000" />
+                          <Label>Annual Turnover (Last 3 Years avg in INR)</Label>
+                          <Input type="number" placeholder="e.g. 5000000" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Cancelled Cheque <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Cancelled Cheque</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                          <h4 className="font-semibold text-sm mb-2 mt-2 font-bold uppercase tracking-wider">Bank Details</h4>
+                          <h4 className="font-semibold text-sm font-bold uppercase tracking-wider">Bank Details</h4>
                         </div>
                         <div className="space-y-2">
-                          <Label>Bank Name <span className="text-destructive">*</span></Label>
-                          <Input required placeholder="Enter bank name" />
+                          <Label>Bank Name</Label>
+                          <Input placeholder="Enter bank name" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Account Number <span className="text-destructive">*</span></Label>
-                          <Input required placeholder="Enter account number" />
+                          <Label>Account Number</Label>
+                          <Input placeholder="Enter account number" />
                         </div>
                         <div className="space-y-2">
-                          <Label>IFSC Code <span className="text-destructive">*</span></Label>
-                          <Input required placeholder="Enter IFSC code" />
+                          <Label>IFSC Code</Label>
+                          <Input placeholder="Enter IFSC code" />
                         </div>
+                      </div>
+                      <div className="flex justify-end pt-3 border-t border-border">
+                        <Button type="button" onClick={() => saveSection("financial", "Financial Details")} disabled={savingSection === "financial"} className="rounded-sm min-w-[150px]">
+                          {savingSection === "financial" ? "Saving…" : savedSections.has("financial") ? "✓ Saved" : "Save & Continue"}
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
                   {/* Capability */}
-                  <AccordionItem value="capability" className="border rounded-sm bg-card px-4 shadow-sm text-left">
-                    <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2 text-primary font-bold">
-                        <Factory className="h-5 w-5" /> Capability & Experience
+                  <AccordionItem value="capability" className={`border rounded-sm bg-card px-4 shadow-sm text-left ${!canOpen("capability") ? "opacity-60" : ""}`}>
+                    <AccordionTrigger className="hover:no-underline py-4" disabled={!canOpen("capability")}>
+                      <div className="flex items-center gap-2 text-primary font-bold w-full pr-2">
+                        <Factory className="h-5 w-5 shrink-0" />
+                        <span>Capability &amp; Experience</span>
+                        {savedSections.has("capability") && <CheckCircle2 className="h-4 w-4 text-success ml-auto" />}
+                        {!canOpen("capability") && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-6 space-y-4">
+                    <AccordionContent className="pt-2 pb-4 space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Work Categories <span className="text-destructive">*</span></Label>
-                          <Input required placeholder="e.g. Civil Construction, IT Services" />
+                          <Label>Work Categories</Label>
+                          <Input placeholder="e.g. Civil Construction, IT Services" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Experience Years <span className="text-destructive">*</span></Label>
-                          <Input type="number" required placeholder="Years of experience" />
+                          <Label>Experience Years</Label>
+                          <Input type="number" placeholder="Years of experience" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                           <Label>Machinery / Manpower Details</Label>
                           <Textarea placeholder="Briefly describe your equipment and manpower strength" className="min-h-[80px]" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                          <Label>Previous Projects Synopsis <span className="text-destructive">*</span></Label>
-                          <Textarea required placeholder="List 2-3 major completed projects" className="min-h-[100px]" />
+                          <Label>Previous Projects Synopsis</Label>
+                          <Textarea placeholder="List 2-3 major completed projects" className="min-h-[100px]" />
                         </div>
+                      </div>
+                      <div className="flex justify-end pt-3 border-t border-border">
+                        <Button type="button" onClick={() => saveSection("capability", "Capability & Experience")} disabled={savingSection === "capability"} className="rounded-sm min-w-[150px]">
+                          {savingSection === "capability" ? "Saving…" : savedSections.has("capability") ? "✓ Saved" : "Save & Continue"}
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
                   {/* Documents */}
-                  <AccordionItem value="documents" className="border rounded-sm bg-card px-4 shadow-sm text-left">
-                    <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2 text-primary font-bold">
-                        <FileText className="h-5 w-5" /> Supporting Documents
+                  <AccordionItem value="documents" className={`border rounded-sm bg-card px-4 shadow-sm text-left ${!canOpen("documents") ? "opacity-60" : ""}`}>
+                    <AccordionTrigger className="hover:no-underline py-4" disabled={!canOpen("documents")}>
+                      <div className="flex items-center gap-2 text-primary font-bold w-full pr-2">
+                        <FileText className="h-5 w-5 shrink-0" />
+                        <span>Supporting Documents</span>
+                        {savedSections.has("documents") && <CheckCircle2 className="h-4 w-4 text-success ml-auto" />}
+                        {!canOpen("documents") && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-6 space-y-4">
+                    <AccordionContent className="pt-2 pb-4 space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label>MSME Certificate (if applicable)</Label>
@@ -291,39 +349,52 @@ export default function VendorSignup() {
                           <Input type="file" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Experience Certificates <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Experience Certificates</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Tax Returns (Last 3 Years) <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Tax Returns (Last 3 Years)</Label>
+                          <Input type="file" />
                         </div>
+                      </div>
+                      <div className="flex justify-end pt-3 border-t border-border">
+                        <Button type="button" onClick={() => saveSection("documents", "Supporting Documents")} disabled={savingSection === "documents"} className="rounded-sm min-w-[150px]">
+                          {savingSection === "documents" ? "Saving…" : savedSections.has("documents") ? "✓ Saved" : "Save & Continue"}
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
                   {/* Authorized Signatory */}
-                  <AccordionItem value="signatory" className="border rounded-sm bg-card px-4 shadow-sm text-left">
-                    <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2 text-primary font-bold">
-                        <Stamp className="h-5 w-5" /> Authorized Signatory
+                  <AccordionItem value="signatory" className={`border rounded-sm bg-card px-4 shadow-sm text-left ${!canOpen("signatory") ? "opacity-60" : ""}`}>
+                    <AccordionTrigger className="hover:no-underline py-4" disabled={!canOpen("signatory")}>
+                      <div className="flex items-center gap-2 text-primary font-bold w-full pr-2">
+                        <Stamp className="h-5 w-5 shrink-0" />
+                        <span>Authorized Signatory</span>
+                        {savedSections.has("signatory") && <CheckCircle2 className="h-4 w-4 text-success ml-auto" />}
+                        {!canOpen("signatory") && <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />}
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-6 space-y-4">
+                    <AccordionContent className="pt-2 pb-4 space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Aadhaar / ID Proof <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Aadhaar / ID Proof</Label>
+                          <Input type="file" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Authorization Letter <span className="text-destructive">*</span></Label>
-                          <Input type="file" required />
+                          <Label>Authorization Letter</Label>
+                          <Input type="file" />
                           <p className="text-[10px] text-muted-foreground mt-1 text-left">Letter authorizing the signatory, signed by directors/partners.</p>
                         </div>
                       </div>
+                      <div className="flex justify-end pt-3 border-t border-border">
+                        <Button type="button" onClick={() => saveSection("signatory", "Authorized Signatory")} disabled={savingSection === "signatory"} className="rounded-sm min-w-[150px]">
+                          {savingSection === "signatory" ? "Saving…" : savedSections.has("signatory") ? "✓ Saved" : "Save"}
+                        </Button>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
-                  
+
                 </Accordion>
 
                 <div className="pt-4 flex justify-end gap-3 border-t border-border">

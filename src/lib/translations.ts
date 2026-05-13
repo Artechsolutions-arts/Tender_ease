@@ -44,6 +44,7 @@ const translations = {
     nav_compliance: "Compliance / CVC",
     nav_help: "Help Desk",
     nav_my_profile: "My Profile",
+    nav_update_profile: "Update Profile",
 
     // ── Footer ──────────────────────────────────────────────────────────────
     footer_portal_title: "AP e-Procurement",
@@ -357,6 +358,7 @@ const translations = {
     nav_compliance: "अनुपालन / CVC",
     nav_help: "सहायता केंद्र",
     nav_my_profile: "मेरी प्रोफाइल",
+    nav_update_profile: "प्रोफाइल अपडेट करें",
 
     // ── Footer ──────────────────────────────────────────────────────────────
     footer_portal_title: "AP ई-खरीद",
@@ -656,6 +658,7 @@ const translations = {
     nav_compliance: "సమ్మతి / CVC",
     nav_help: "హెల్ప్ డెస్క్",
     nav_my_profile: "నా ప్రొఫైల్",
+    nav_update_profile: "ప్రొఫైల్ అప్‌డేట్ చేయండి",
 
     // ── Footer ──────────────────────────────────────────────────────────────
     footer_portal_title: "AP ఈ-ప్రొక్యూర్మెంట్",

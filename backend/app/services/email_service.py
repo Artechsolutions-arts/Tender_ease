@@ -2,10 +2,12 @@
 Email notification service — AP Tender e-Procurement Portal.
 All CSS is fully inlined (Gmail/Outlook safe). Silently skipped if SMTP not configured.
 """
+import base64
 import logging
 import smtplib
 import threading
 from datetime import datetime
+from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, FRONTEND_URL
@@ -64,6 +66,7 @@ _AP_LOGO_B64 = (
     "KFyq0aGeqU/EwK6kjJ0IiYi18RrNKGwynIbq0YjhHpo1Yt0g2jvOsg0kJ4rch4d9b0atSErKw/Y2"
     "Nq8wO9p/VlZygCm+F/b/8Bl00L7ZQbJcwAAAAASUVORK5CYII="
 )
+_AP_LOGO_BYTES = base64.b64decode(_AP_LOGO_B64)
 
 
 # ── Core helpers ───────────────────────────────────────────────────────────────
@@ -73,11 +76,21 @@ def send_email(to: str, subject: str, html_body: str) -> bool:
         logger.info("SMTP not configured — skipping mail to %s", to)
         return False
     try:
-        msg = MIMEMultipart("alternative")
+        # multipart/related allows CID-referenced inline images (Gmail/Outlook safe)
+        msg = MIMEMultipart("related")
         msg["Subject"] = subject
         msg["From"] = SMTP_FROM
         msg["To"] = to
-        msg.attach(MIMEText(html_body, "html"))
+
+        alt = MIMEMultipart("alternative")
+        alt.attach(MIMEText(html_body, "html"))
+        msg.attach(alt)
+
+        logo = MIMEImage(_AP_LOGO_BYTES, _subtype="png")
+        logo.add_header("Content-ID", "<ap-emblem>")
+        logo.add_header("Content-Disposition", "inline", filename="ap-emblem.png")
+        msg.attach(logo)
+
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.ehlo()
             server.starttls()
@@ -137,7 +150,7 @@ def _wrap(inner_html: str) -> str:
       <!-- ── WATERMARK STAMP ── -->
       <tr>
         <td style="padding:20px 32px 8px;text-align:center;">
-          <img src="data:image/png;base64,{_AP_LOGO_B64}"
+          <img src="cid:ap-emblem"
                width="64" height="70" alt="Government of Andhra Pradesh"
                style="display:inline-block;border:0;opacity:0.07;filter:grayscale(100%);"/>
         </td>
@@ -210,7 +223,7 @@ def _gov_header() -> str:
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td width="72" valign="middle" style="padding-right:16px;">
-                <img src="data:image/png;base64,{_AP_LOGO_B64}"
+                <img src="cid:ap-emblem"
                      width="56" height="62" alt="AP Govt Emblem"
                      style="display:block;border:0;"/>
               </td>
@@ -230,7 +243,7 @@ def _gov_header() -> str:
                 </p>
               </td>
               <td align="right" valign="middle" style="padding-left:12px;">
-                <img src="data:image/png;base64,{_AP_LOGO_B64}"
+                <img src="cid:ap-emblem"
                      width="40" height="44" alt=""
                      style="display:block;border:0;opacity:0.08;"/>
               </td>

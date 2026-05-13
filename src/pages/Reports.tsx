@@ -26,10 +26,32 @@ export default function Reports() {
 
   const departments = useMemo(() => Array.from(new Set(tenders.map((t) => t.department))), [tenders]);
 
-  const filtered = useMemo(
-    () => tenders.filter((t) => department === "all" || t.department === department),
-    [tenders, department]
-  );
+  const filtered = useMemo(() => {
+    const now = new Date();
+    let from: Date | null = null;
+    let to: Date | null = null;
+
+    if (period === "month") {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    } else if (period === "quarter") {
+      // Indian FY quarters: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+      const m = now.getMonth();
+      const qStart = m >= 9 ? 9 : m >= 6 ? 6 : m >= 3 ? 3 : 0;
+      from = new Date(now.getFullYear(), qStart, 1);
+      to = new Date(now.getFullYear(), qStart + 3, 0, 23, 59, 59);
+    }
+    // "fy" — no date restriction, show all
+
+    return tenders.filter((t) => {
+      if (department !== "all" && t.department !== department) return false;
+      if (from && to) {
+        const d = new Date(t.startDate);
+        return !isNaN(d.getTime()) && d >= from && d <= to;
+      }
+      return true;
+    });
+  }, [tenders, department, period]);
 
   const totalValue = filtered.reduce((s, t) => s + t.estimatedValue, 0);
   const awarded = filtered.filter((t) => t.status === "Awarded");

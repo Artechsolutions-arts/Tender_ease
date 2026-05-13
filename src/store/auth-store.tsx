@@ -99,13 +99,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateVerificationStep = useCallback((step: number) => {
     if (!currentUser) return;
     setCurrentUser({ ...currentUser, verificationStep: step as 1 | 2 | 3 | 4 | 5 });
-    apiClient.patch("/auth/verification-step", { step }).catch(() => {});
+    apiClient.patch("/auth/verification-step", { step: `STEP_${step}` }).catch(() => {});
   }, [currentUser]);
 
   const submitVerification = useCallback(() => {
     if (!currentUser) return;
-    setCurrentUser({ ...currentUser, isVerificationPending: true, verificationStep: 4 });
-    apiClient.patch("/auth/verification-step", { step: 4 }).catch(() => {});
+    setCurrentUser({ ...currentUser, isVerificationPending: true, verificationStep: 5 });
+    apiClient.patch("/auth/verification-step", { step: "COMPLETED" }).catch(() => {});
   }, [currentUser]);
 
   return (

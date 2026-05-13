@@ -303,7 +303,7 @@ export default function Tenders() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setAwardFor(undefined)}>{T("tenders_award_cancel")}</Button>
-                <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={confirmAward}>{T("tenders_award_issue_loa")}</Button>
+                <Button className="bg-success text-success-foreground hover:bg-success/90" onClick={confirmAward}>Confirm Award</Button>
               </DialogFooter>
             </>
           )}

@@ -208,6 +208,25 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       .catch(() => {});
   }, []);
 
+  // ── fetch notifications from backend ──────────────────────────────────────
+  const fetchNotifications = useCallback(() => {
+    apiClient.get("/notifications")
+      .then(res => {
+        const raw = res.data?.notifications ?? [];
+        if (!Array.isArray(raw)) return;
+        const data: AppNotification[] = raw.map((n: any) => ({
+          ...n,
+          targetRole: n.targetRole?.toLowerCase() ?? n.targetRole,
+        }));
+        setNotifications(prev => {
+          const existingIds = new Set(prev.map(n => n.id));
+          const fresh = data.filter(n => !existingIds.has(n.id));
+          return [...fresh, ...prev];
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   // Re-fetch whenever a token appears (e.g. right after login)
   const [token, setToken] = useState(() => sessionStorage.getItem("accessToken"));
   useEffect(() => {
@@ -218,7 +237,18 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     return () => clearInterval(id);
   }, [token]);
 
-  useEffect(() => { if (token) { fetchVendors(); fetchPending(); fetchTenders(); } }, [token, fetchVendors, fetchPending, fetchTenders]);
+  function getTokenRole(t: string | null): string | null {
+    if (!t) return null;
+    try { return JSON.parse(atob(t.split(".")[1]))?.role ?? null; } catch { return null; }
+  }
+
+  useEffect(() => {
+    if (!token) return;
+    fetchVendors();
+    fetchTenders();
+    fetchNotifications();
+    if (getTokenRole(token) === "ADMIN") fetchPending();
+  }, [token, fetchVendors, fetchPending, fetchTenders, fetchNotifications]);
 
   useEffect(() => {
     sessionStorage.setItem("admin_notifications", JSON.stringify(notifications));
@@ -258,7 +288,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       eligibleVendorIds: tender.eligibleVendorIds,
       status: "Draft",
       documents: tender.documents,
-    }).then(() => fetchTenders()).catch((err) => {
+    }).then(() => { fetchTenders(); fetchNotifications(); }).catch((err) => {
       toast.error("Failed to save tender to database", {
         description: err?.response?.data?.detail ?? "Server error. The tender may not have been saved.",
       });
@@ -306,7 +336,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       department: patch.department,
       eligibleVendorIds: patch.eligibleVendorIds,
       changeNote: changes,
-    }).then(() => fetchTenders()).catch((err) => {
+    }).then(() => { fetchTenders(); fetchNotifications(); }).catch((err) => {
       const data = err?.response?.data;
       const detail = data?.detail
         ?? data?.details?.[0]?.message?.replace(/^Value error,\s*/i, "")
@@ -315,7 +345,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       toast.error("Failed to update tender", { description: detail });
       fetchTenders();
     });
-  }, [pushNotification, queueEmails, vendorEmails, fetchTenders]);
+  }, [pushNotification, queueEmails, vendorEmails, fetchTenders, fetchNotifications]);
 
   const changeStatus: AdminCtx["changeStatus"] = useCallback((id, next, awardedVendorId) => {
     setTenders((prev) => prev.map((t) => {
@@ -433,8 +463,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     });
   }, [pushNotification]);
 
-  const markAllRead = useCallback(() => setNotifications((p) => p.map((n) => ({ ...n, read: true }))), []);
-  const markRead = useCallback((id: string) => setNotifications((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n))), []);
+  const markAllRead = useCallback(() => {
+    setNotifications((p) => p.map((n) => ({ ...n, read: true })));
+    apiClient.patch("/notifications/read-all").catch(() => {});
+  }, []);
+  const markRead = useCallback((id: string) => {
+    setNotifications((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    apiClient.patch(`/notifications/${id}/read`).catch(() => {});
+  }, []);
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
   const value: AdminCtx = {

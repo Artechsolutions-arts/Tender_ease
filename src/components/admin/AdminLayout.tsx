@@ -20,7 +20,7 @@ type FontScale = "small" | "normal" | "large";
 
 const FONT_SIZES: Record<FontScale, string> = { small: "13px", normal: "15px", large: "18px" };
 
-const NAV: { labelKey: TranslationKey; icon: React.ElementType; to: string; roles: string[] }[] = [
+const NAV: { labelKey: TranslationKey; icon: React.ElementType; to: string; roles: string[]; pendingOnly?: boolean }[] = [
   { labelKey: "nav_overview",        icon: LayoutDashboard, to: "/",                 roles: ["admin"] },
   { labelKey: "nav_overview",        icon: LayoutDashboard, to: "/vendor-dashboard", roles: ["vendor"] },
   { labelKey: "nav_projects",        icon: FolderOpen,      to: "/vendor-projects",  roles: ["vendor"] },
@@ -35,6 +35,7 @@ const NAV: { labelKey: TranslationKey; icon: React.ElementType; to: string; role
   { labelKey: "nav_compliance",      icon: ShieldCheck,     to: "/compliance",       roles: ["admin"] },
   { labelKey: "nav_help",            icon: HelpCircle,      to: "/help",             roles: ["admin", "vendor"] },
   { labelKey: "nav_my_profile",      icon: UserCheck,       to: "/vendor-dashboard?profile=open", roles: ["vendor"] },
+  { labelKey: "nav_update_profile",  icon: FileCheck2,      to: "/vendor-verification",           roles: ["vendor"], pendingOnly: true },
 ];
 
 interface Crumb { label: string; to?: string }
@@ -70,7 +71,11 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
     if (main) { main.setAttribute("tabindex", "-1"); main.focus(); main.scrollIntoView({ behavior: "smooth" }); }
   };
 
-  const navItems = NAV.filter((item) => item.roles.includes((currentUser?.role ?? "admin") as UserRole));
+  const navItems = NAV.filter((item) => {
+    if (!item.roles.includes((currentUser?.role ?? "admin") as UserRole)) return false;
+    if (item.pendingOnly && !currentUser?.isVerificationPending) return false;
+    return true;
+  });
   const isAdmin = currentUser?.role === "admin";
   const { data: docsData } = useDocuments(isAdmin ? {} : undefined);
   const pendingReviewCount = isAdmin
@@ -78,7 +83,7 @@ export function AdminLayout({ children, title, breadcrumbs, actions }: Props) {
     : 0;
   const visibleNotifications = notifications.filter((n) => {
     if (!currentUser) return false;
-    if (n.targetRole && n.targetRole !== "all" && n.targetRole !== currentUser.role) return false;
+    if (n.targetRole && n.targetRole.toLowerCase() !== "all" && n.targetRole.toLowerCase() !== currentUser.role) return false;
     if (currentUser.role === "vendor" && n.targetVendorIds?.length) return n.targetVendorIds.includes(currentUser.vendorId ?? "");
     return true;
   });

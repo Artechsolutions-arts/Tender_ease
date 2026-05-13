@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import (
     Tender, TenderDocument, TenderEligibleVendor, TenderHistory,
-    TenderStatusEnum, User, Vendor, Bid,
+    TenderStatusEnum, User, Vendor, Bid, Notification, NotificationTypeEnum,
 )
 from app.core.deps import get_current_user, require_admin
 from app.core.config import MIN_BIDS_FOR_EVALUATION
@@ -112,7 +112,7 @@ STATUS_FLOW = {
 
 # ── Serialisers ───────────────────────────────────────────────────────────────
 
-def _tender_dict(t: Tender, include_docs: bool = True) -> dict:
+def _tender_dict(t: Tender, include_docs: bool = True, include_history: bool = True) -> dict:
     d = {
         "id": t.id,
         "name": t.name,
@@ -130,6 +130,17 @@ def _tender_dict(t: Tender, include_docs: bool = True) -> dict:
         "eligibleVendorIds": [ev.vendor_id for ev in t.eligible_vendors],
         "eligibleVendorCount": len(t.eligible_vendors),
     }
+    if include_history:
+        d["history"] = [
+            {
+                "version": h.version,
+                "editedAt": h.edited_at.isoformat() if h.edited_at else None,
+                "editedBy": h.edited_by,
+                "changes": h.changes,
+                "snapshot": h.snapshot,
+            }
+            for h in sorted(t.history, key=lambda h: h.version, reverse=True)
+        ]
     if include_docs:
         d["documents"] = [
             {"id": doc.id, "name": doc.name, "url": doc.url, "size": doc.size}
@@ -246,6 +257,29 @@ def create_tender(
         "endDate": tender.end_date.strftime("%d %b %Y") if tender.end_date else "—",
     }
     send_tender_created_notifications(vendor_emails, tender_info)
+
+    end_label = tender.end_date.strftime("%d %b %Y") if tender.end_date else "—"
+    if body.eligibleVendorIds:
+        db.add(Notification(
+            title=f"New Tender: {tender.name}",
+            body=f"Tender {tender.id} published in {tender.department}. Bid deadline: {end_label}.",
+            type=NotificationTypeEnum.tender_created,
+            audience=f"{len(body.eligibleVendorIds)} vendors",
+            target_role="VENDOR",
+            target_vendor_ids=body.eligibleVendorIds,
+            channels=["in_app", "email"],
+            related_tender_id=tender.id,
+        ))
+    db.add(Notification(
+        title=f"New tender drafted: {tender.name}",
+        body=f"{len(body.eligibleVendorIds)} vendor(s) marked eligible. Currently in {tender.status.value}.",
+        type=NotificationTypeEnum.tender_created,
+        audience="Admin",
+        target_role="ADMIN",
+        channels=["in_app"],
+        related_tender_id=tender.id,
+    ))
+    db.commit()
     return _tender_dict(tender)
 
 
@@ -278,9 +312,9 @@ def update_tender(
     # Save immutable version snapshot
     version = len(t.history) + 1
     db.add(TenderHistory(
-        tender_id=t.id, version=version, edited_by=current_user.id,
+        tender_id=t.id, version=version, edited_by=current_user.name,
         changes=body.changeNote or "Updated",
-        snapshot=_tender_dict(t, include_docs=False),
+        snapshot=_tender_dict(t, include_docs=False, include_history=False),
     ))
 
     field_map = [
@@ -318,6 +352,30 @@ def update_tender(
         "endDate": t.end_date.strftime("%d %b %Y") if t.end_date else "—",
     }
     send_tender_updated_notifications(vendor_emails, tender_info, body.changeNote)
+
+    change_note = body.changeNote or "Tender details updated"
+    end_label = t.end_date.strftime("%d %b %Y") if t.end_date else "—"
+    if current_eligible_ids:
+        db.add(Notification(
+            title=f"Tender Updated: {t.name}",
+            body=f"{change_note}. NIT {t.id} — deadline: {end_label}.",
+            type=NotificationTypeEnum.tender_updated,
+            audience=f"{len(current_eligible_ids)} vendors",
+            target_role="VENDOR",
+            target_vendor_ids=current_eligible_ids,
+            channels=["in_app", "email"],
+            related_tender_id=t.id,
+        ))
+    db.add(Notification(
+        title=f"Tender updated: {t.name}",
+        body=f"{change_note}. {len(current_eligible_ids)} eligible vendor(s) notified.",
+        type=NotificationTypeEnum.tender_updated,
+        audience="Admin",
+        target_role="ADMIN",
+        channels=["in_app"],
+        related_tender_id=t.id,
+    ))
+    db.commit()
     return _tender_dict(t)
 
 
@@ -374,6 +432,16 @@ def change_status(
         t.awarded_vendor_id = body.awardedVendorId
 
     old_status = t.status.value
+
+    # Save version snapshot before mutating status
+    version = len(t.history) + 1
+    award_suffix = f" (awarded to {body.awardedVendorId})" if body.awardedVendorId else ""
+    db.add(TenderHistory(
+        tender_id=t.id, version=version, edited_by=current_user.name,
+        changes=f"Status changed: {old_status} → {body.status}{award_suffix}",
+        snapshot=_tender_dict(t, include_docs=False, include_history=False),
+    ))
+
     t.status = new_status
 
     audit_log(db, Action.TENDER_STATUS if new_status != TenderStatusEnum.Awarded else Action.TENDER_AWARD,

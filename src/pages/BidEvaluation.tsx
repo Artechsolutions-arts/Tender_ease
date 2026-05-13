@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, Trophy, FileCheck2, AlertTriangle, CheckCircle2, XCircle, Download, Gavel, Building2, Phone, Mail, Star } from "lucide-react";
+import { Sparkles, Trophy, FileCheck2, AlertTriangle, CheckCircle2, XCircle, Download, Building2, Phone, Mail, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/useT";
 import { printAsPdf } from "@/lib/printPdf";
@@ -93,7 +93,7 @@ export default function BidEvaluation() {
     if (tender.status === "Awarded") return;
     if (tender.status === "Closed") {
       changeStatus(tender.id, "Evaluated");
-      toast.info("Tender marked as Evaluated. Click Issue LOA again to award.");
+      toast.info("Tender marked as Evaluated.");
       return;
     }
     if (tender.status !== "Evaluated") {
@@ -211,9 +211,6 @@ export default function BidEvaluation() {
         <>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportCER}>
             <Download className="h-3.5 w-3.5" /> {T("be_export_cer")}
-          </Button>
-          <Button size="sm" className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleAward} disabled={!tender || tender.status === "Awarded"}>
-            <Gavel className="h-3.5 w-3.5" /> {T("be_issue_loa")}
           </Button>
         </>
       }
