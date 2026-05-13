@@ -108,8 +108,8 @@ export function TenderFormDialog({ open, onOpenChange, tender }: Props) {
     if (open) {
       setName(tender?.name ?? "");
       setDescription(tender?.description ?? "");
-      setStartDate(tender?.startDate ?? new Date().toISOString().slice(0, 10));
-      setEndDate(tender?.endDate ?? "");
+      setStartDate(tender?.startDate ? tender.startDate.slice(0, 10) : new Date().toISOString().slice(0, 10));
+      setEndDate(tender?.endDate ? tender.endDate.slice(0, 10) : "");
       setEstimatedValue(tender ? String(tender.estimatedValue) : "");
       setCategory(tender?.category ?? CATEGORIES[0]);
       setDepartment(tender?.department ?? DEPARTMENTS[0]);
